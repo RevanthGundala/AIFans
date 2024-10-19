@@ -1,0 +1,19 @@
+{
+  "compilerOptions": {
+    "composite": true,
+    "target": "esnext",
+    "module": "esnext",
+    "moduleResolution": "node",
+    "lib": ["esnext"],
+    "baseUrl": "./",
+    "paths": {
+      "@lib/*": ["lib/*"],
+      "@static/*": ["static/*"]
+    }
+  },
+  "rootDir": "src",
+  "outDir": "dist",
+  "skipLibCheck": true,
+  "include": ["lib/**/*"],
+  "exclude": ["node_modules", "dist"]
+}

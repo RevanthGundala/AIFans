@@ -23,8 +23,10 @@ export default function Home() {
     abi: ABI,
     functionName: "getBots"
   })
-  const [newProfileName, setNewProfileName] = useState("");
-  const [newProfileDescription, setNewProfileDescription] = useState("");
+  const [newbotName, setNewbotName] = useState("");
+  const [newbotDescription, setNewbotDescription] = useState("");
+
+  const handleSubmit = async () => {}
 
   return (
     <div className="container mx-auto p-4 bg-blue-100 min-h-screen">
@@ -36,31 +38,31 @@ export default function Home() {
       <Dialog>
         <DialogTrigger asChild>
           <Button className="mb-6 bg-blue-400 hover:bg-blue-500">
-            Create Profile
+            Create bot
           </Button>
         </DialogTrigger>
         <DialogContent className="bg-white">
           <DialogHeader>
-            <DialogTitle>Create New Profile</DialogTitle>
+            <DialogTitle>Create New bot</DialogTitle>
             <DialogDescription>
-              Fill in the details to create your new profile.
+              Fill in the details to create your new bot.
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
             <Input
               placeholder="Name"
-              value={newProfileName}
-              onChange={(e) => setNewProfileName(e.target.value)}
+              value={newbotName}
+              onChange={(e) => setNewbotName(e.target.value)}
             />
             <Textarea
               placeholder="Description"
-              value={newProfileDescription}
-              onChange={(e) => setNewProfileDescription(e.target.value)}
+              value={newbotDescription}
+              onChange={(e) => setNewbotDescription(e.target.value)}
             />
           </div>
           <DialogFooter>
             <Button
-              onClick={handleCreateProfile}
+              onClick={handleSubmit}
               className="bg-blue-400 hover:bg-blue-500"
             >
               Submit
@@ -70,28 +72,28 @@ export default function Home() {
       </Dialog>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-        {bots.map((profile) => (
-          <Card key={profile.id} className="overflow-hidden bg-white">
+        {bots.map((bot) => (
+          <Card key={bot.id} className="overflow-hidden bg-white">
             <CardContent className="p-0 relative">
               <img
-                src={profile.image}
-                alt={profile.name}
+                src={bot.image}
+                alt={bot.name}
                 className="w-full h-64 object-cover"
               />
               <div
                 className={`absolute top-2 right-2 w-3 h-3 rounded-full ${
-                  profile.isOnline ? "bg-green-500" : "bg-red-500"
+                  bot.isOnline ? "bg-green-500" : "bg-red-500"
                 }`}
               />
             </CardContent>
             <CardFooter className="flex justify-between items-center">
               <h2 className="text-lg font-semibold text-blue-500">
-                {profile.name}
+                {bot.name}
               </h2>
               <Button
                 variant="outline"
                 className="text-blue-400 border-blue-400 hover:bg-blue-100"
-                onClick={() => console.log(`View profile of ${profile.name}`)}
+                onClick={() => console.log(`View bot of ${bot.name}`)}
               >
                 View Profile
                 <ArrowUpRight className="ml-2 h-4 w-4" />
