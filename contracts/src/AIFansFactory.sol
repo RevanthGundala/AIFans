@@ -80,11 +80,11 @@ contract AIFansFactory is ReentrancyGuard {
         bots[tokenId].voicePrice = _voicePrice;
     }
 
-    function getBotWallets() external view returns (address[] memory) {
+    function getBots() external view returns (Bot[] memory) {
         uint256 numBots = FanMedia(fanMediaAddress).tokenId();
-        address[] memory allBots = new address[](numBots);
+        Bot[] memory allBots = new Bot[](numBots);
         for (uint256 i = 0; i < numBots; i++) {
-            allBots[i] = bots[i].wallet;
+            allBots[i] = bots[i];
         }
         return allBots;
     }

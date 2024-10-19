@@ -15,94 +15,22 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-
-type Profile = {
-  id: number;
-  name: string;
-  image: string;
-  isOnline: boolean;
-};
+import { ABI, ADDRESS } from "@/lib/constants";
 
 export default function Home() {
-  const [profiles, setProfiles] = useState<Profile[]>([]);
+  const { data: bots, isLoading } = useReadContract({
+    address: ADDRESS
+    abi: ABI,
+    functionName: "getBots"
+  })
   const [newProfileName, setNewProfileName] = useState("");
   const [newProfileDescription, setNewProfileDescription] = useState("");
-
-  useEffect(() => {
-    // Simulating fetching profiles
-    setProfiles([
-      {
-        id: 1,
-        name: "Alex",
-        image: "/placeholder.svg?height=300&width=300",
-        isOnline: true,
-      },
-      {
-        id: 2,
-        name: "Sam",
-        image: "/placeholder.svg?height=300&width=300",
-        isOnline: false,
-      },
-      {
-        id: 3,
-        name: "Jordan",
-        image: "/placeholder.svg?height=300&width=300",
-        isOnline: true,
-      },
-      {
-        id: 4,
-        name: "Taylor",
-        image: "/placeholder.svg?height=300&width=300",
-        isOnline: false,
-      },
-      {
-        id: 5,
-        name: "Casey",
-        image: "/placeholder.svg?height=300&width=300",
-        isOnline: true,
-      },
-      {
-        id: 6,
-        name: "Riley",
-        image: "/placeholder.svg?height=300&width=300",
-        isOnline: false,
-      },
-    ]);
-  }, []);
-
-  const handleCreateProfile = () => {
-    // Here you would typically send this data to your backend
-    console.log("Creating profile:", {
-      name: newProfileName,
-      description: newProfileDescription,
-    });
-    // For now, let's just add it to our local state
-    setProfiles((prev) => [
-      ...prev,
-      {
-        id: prev.length + 1,
-        name: newProfileName,
-        image: "/placeholder.svg?height=300&width=300",
-        isOnline: true,
-      },
-    ]);
-  };
-
-  const handleConnectWallet = () => {
-    // This function does nothing for now
-    console.log("Connect Wallet clicked");
-  };
 
   return (
     <div className="container mx-auto p-4 bg-blue-100 min-h-screen">
       <header className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold text-blue-500">ConnectMe</h1>
-        <Button
-          onClick={handleConnectWallet}
-          className="bg-blue-400 hover:bg-blue-500"
-        >
-          Connect Wallet
-        </Button>
+        <ConnectKitButton />
       </header>
 
       <Dialog>
@@ -142,7 +70,7 @@ export default function Home() {
       </Dialog>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-        {profiles.map((profile) => (
+        {bots.map((profile) => (
           <Card key={profile.id} className="overflow-hidden bg-white">
             <CardContent className="p-0 relative">
               <img

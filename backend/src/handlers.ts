@@ -16,9 +16,9 @@ const client = createPublicClient({
 
 export const tip = async () => {};
 
-export const subscribe = async () => {};
-
 export const generateImage = async (context: HandlerContext) => {};
+
+export const generateVoice = async (context: HandlerContext) => {};
 
 export const generateText = async (context: HandlerContext) => {
   console.log("generateText");
