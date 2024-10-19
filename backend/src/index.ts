@@ -1,6 +1,8 @@
-import express, { Express, Request, Response } from "express";
+import express from "express";
+import type { Express, Request, Response } from "express";
 import { HandlerContext, run } from "@xmtp/message-kit";
 import { privateKeyToAccount, PrivateKeyAccount } from "viem/accounts";
+import { commands } from "./command";
 
 // Type definitions
 interface ClientInfo {
@@ -30,6 +32,7 @@ interface CleanupParams {
 }
 
 const app: Express = express();
+app.use(express.json());
 const port: number = 3000;
 
 // Store active XMTP clients
@@ -174,7 +177,7 @@ process.on("SIGINT", async () => {
 });
 
 app.listen(port, () => {
-  console.log("Server is running at http://localhost:${port})");
+  console.log(`Server is running at http://localhost:${port}`);
 });
 
 export default app;
