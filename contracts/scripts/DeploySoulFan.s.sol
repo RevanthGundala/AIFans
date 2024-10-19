@@ -8,7 +8,7 @@ import {SoulFan} from "../src/SoulFan.sol";
 contract DeploySoulFan is Script {
     function run() external returns (address nft) {
         vm.startBroadcast(vm.envUint("PRIVATE_KEY"));
-        SoulFan soulFan = new SoulFan{salt: "iuasfdosdfaiafdajs"}("sFAN, sFAN");
+        SoulFan soulFan = new SoulFan{salt: "iuasfdosdfaiafdajs"}("sFAN", "sFAN");
         nft = address(soulFan);
         vm.stopBroadcast();
     }

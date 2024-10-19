@@ -32,7 +32,7 @@ contract AIFansFactory is ReentrancyGuard {
         _;
     }
 
-    constructor(address _soulFanAddress, address fanMediaAddress) {
+    constructor(address _soulFanAddress, address _fanMediaAddress) {
         soulFanAddress = _soulFanAddress;
         fanMediaAddress = _fanMediaAddress;
     }
@@ -43,7 +43,7 @@ contract AIFansFactory is ReentrancyGuard {
 
         // Update state vars
         bots[tokenId] =
-            Bot{wallet: botWallet, walrusSite: walrusSite, subscriptionPrice: 0, imagePrice: 0, voicePrice: 0};
+            Bot({wallet: botWallet, walrusSite: walrusSite, subscriptionPrice: 0, imagePrice: 0, voicePrice: 0});
 
         emit BotCreated(botWallet, tokenId, block.timestamp);
     }
@@ -59,14 +59,14 @@ contract AIFansFactory is ReentrancyGuard {
         external
         payable
         nonReentrant
-        isSubscribed(tokenId, user)
+        isSubscribed(tokenId, msg.sender)
     {
         if (isImage) {
             require(msg.value >= bots[tokenId].imagePrice, "you need to pay more");
         } else {
             require(msg.value >= bots[tokenId].imagePrice, "you need to pay more");
         }
-        uint256 _tokenId = FanMedia(fanMediaAddress).mint(blob, user);
+        uint256 _tokenId = FanMedia(fanMediaAddress).mint(blob, msg.sender);
         (bool success,) = bots[tokenId].wallet.call{value: msg.value}("");
         require(success, "Failed to transfer eth");
     }
@@ -84,8 +84,16 @@ contract AIFansFactory is ReentrancyGuard {
         uint256 numBots = FanMedia(fanMediaAddress).tokenId();
         address[] memory allBots = new address[](numBots);
         for (uint256 i = 0; i < numBots; i++) {
-            allBots[i] = bots[i];
+            allBots[i] = bots[i].wallet;
         }
         return allBots;
+    }
+
+    function getBotWallet(uint256 tokenId) external view returns (address) {
+        return bots[tokenId].wallet;
+    }
+
+    function getSubscription(address user, uint256 tokenId) external view returns (bool) {
+        return subscriptions[user][tokenId];
     }
 }

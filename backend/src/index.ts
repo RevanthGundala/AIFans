@@ -74,6 +74,8 @@ app.get("/", (_req: Request, res: Response): void => {
   res.send("Express + TypeScript Server");
 });
 
+app.get;
+
 // REST endpoints
 app.post(
   "/xmtp/initialize",

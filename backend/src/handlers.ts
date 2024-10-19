@@ -1,17 +1,31 @@
 import { HandlerContext } from "@xmtp/message-kit";
 import { XMTPMessage, Content, CommandContent } from "./types";
 import Replicate from "replicate";
+import { createPublicClient, http } from "viem";
+import { sepolia } from "viem/chains";
+import { ADDRESS, ABI } from "./constants";
 
 const replicate = new Replicate({
   auth: process.env.REPLICATE_API_KEY,
 });
 
-export const transaction = async () => {};
+const client = createPublicClient({
+  chain: sepolia,
+  transport: http(),
+});
 
-export const generateImage = async (params: any) => {};
+export const tip = async () => {};
+
+export const subscribe = async () => {};
 
 export const generateText = async (context: HandlerContext) => {
   console.log("generateText");
+  const isSubscribed = await client.readContract({
+    address: ADDRESS,
+    abi: ABI,
+    functionName: "getSubscription",
+    args: [sender, tokenId],
+  });
   const message = context.message as unknown as XMTPMessage;
   const { content } = message;
   const { content: text } = content as Content;
