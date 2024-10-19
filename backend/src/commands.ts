@@ -8,7 +8,7 @@ export const commands: CommandGroup[] = [
     triggers: ["/tip"],
     commands: [
       {
-        command: "/tip [amount] [token]",
+        command: "/tip [amount] [token] [network]",
         description: "Send a specified amount of a cryptocurrency.",
         handler: tip,
         params: {
@@ -20,6 +20,11 @@ export const commands: CommandGroup[] = [
             default: "eth",
             type: "string",
             values: ["eth"],
+          },
+          network: {
+            default: "sepolia",
+            type: "string",
+            values: ["sepolia, polygon"], // TODO: add all chains
           },
         },
       },
