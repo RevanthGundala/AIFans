@@ -1,41 +1,91 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
+import {ReentrancyGuard} from "solmate/utils/ReentrancyGuard.sol";
 import {SoulFan} from "./SoulFan.sol";
-import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {FanMedia} from "./FanMedia.sol";
 
-contract AIFansFactory {
+contract AIFansFactory is ReentrancyGuard {
     struct Bot {
         address wallet;
         string walrusSite;
+        uint256 subscriptionPrice;
+        uint256 imagePrice;
+        uint256 voicePrice;
     }
 
+    address public immutable soulFanAddress;
+    address public immutable fanMediaAddress;
+
     mapping(uint256 tokenId => Bot bot) public bots;
-    address public immutable fanImage;
+    mapping(address user => mapping(uint256 tokenId => bool isSubscribed)) public subscriptions;
 
     event BotCreated(address wallet, uint256 tokenId, uint256 timestamp);
 
-    constructor(address _fanImage) {
-        fanImage = _fanImage;
+    modifier onlyBot(uint256 tokenId, address sender) {
+        require(bots[tokenId].wallet == sender, "You are not the owner!");
+        _;
     }
 
-    function createBot(string memory name, string memory blob, string memory walrusSite, address botWallet) external {
+    modifier isSubscribed(uint256 tokenId, address user) {
+        require(subscriptions[user][tokenId]);
+        _;
+    }
+
+    constructor(address _soulFanAddress, address fanMediaAddress) {
+        soulFanAddress = _soulFanAddress;
+        fanMediaAddress = _fanMediaAddress;
+    }
+
+    function createBot(string memory blob, string memory walrusSite, address botWallet) external {
         require(botWallet != address(0), "Invalid bot name");
-        uint256 tokenId = SoulFan(fanImage).mint(blob, botWallet);
+        uint256 tokenId = SoulFan(soulFanAddress).mint(blob, botWallet);
 
         // Update state vars
-        bots[tokenId] = Bot({wallet: botWallet, walrusSite: walrusSite});
+        bots[tokenId] =
+            Bot{wallet: botWallet, walrusSite: walrusSite, subscriptionPrice: 0, imagePrice: 0, voicePrice: 0};
 
         emit BotCreated(botWallet, tokenId, block.timestamp);
     }
 
-    function tip(address bot, address token, uint256 amount) external payable {
-        if (msg.value > 0) {
-            (bool success,) = bot.call{value: msg.value}("");
-            require(success, "Failed to transfer eth");
+    function subscribe(uint256 tokenId) external payable nonReentrant {
+        require(msg.value >= bots[tokenId].subscriptionPrice, "You need to pay more to subscribe");
+        subscriptions[msg.sender][tokenId] = true;
+        (bool success,) = bots[tokenId].wallet.call{value: msg.value}("");
+        require(success, "Failed to transfer eth");
+    }
+
+    function requestMedia(uint256 tokenId, string memory blob, bool isImage)
+        external
+        payable
+        nonReentrant
+        isSubscribed(tokenId, user)
+    {
+        if (isImage) {
+            require(msg.value >= bots[tokenId].imagePrice, "you need to pay more");
+        } else {
+            require(msg.value >= bots[tokenId].imagePrice, "you need to pay more");
         }
-        if (amount > 0) {
-            require(IERC20(token).transfer(bot, amount), "Failed to transfer token");
+        uint256 _tokenId = FanMedia(fanMediaAddress).mint(blob, user);
+        (bool success,) = bots[tokenId].wallet.call{value: msg.value}("");
+        require(success, "Failed to transfer eth");
+    }
+
+    function setPrices(uint256 tokenId, uint256 _subscriptionPrice, uint256 _imagePrice, uint256 _voicePrice)
+        external
+        onlyBot(tokenId, msg.sender)
+    {
+        bots[tokenId].subscriptionPrice = _subscriptionPrice;
+        bots[tokenId].imagePrice = _imagePrice;
+        bots[tokenId].voicePrice = _voicePrice;
+    }
+
+    function getBotWallets() external view returns (address[] memory) {
+        uint256 numBots = FanMedia(fanMediaAddress).tokenId();
+        address[] memory allBots = new address[](numBots);
+        for (uint256 i = 0; i < numBots; i++) {
+            allBots[i] = bots[i];
         }
+        return allBots;
     }
 }
