@@ -15,6 +15,7 @@
   "license": "ISC",
   "description": "",
   "dependencies": {
+    "@phala/dstack-sdk": "^0.1.4",
     "@xmtp/message-kit": "^1.1.0",
     "express": "^4.21.1",
     "replicate": "^1.0.1",

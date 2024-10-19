@@ -11,10 +11,15 @@ import {
   CleanupParams,
 } from "./types";
 import { generateText } from "./handlers.js";
+import { TappdClient } from "@phala/dstack-sdk";
+import { keccak256 } from "viem";
 
 const app: Express = express();
 app.use(express.json());
 const port: number = 3000;
+
+const endpoint =
+  process.env.DSTACK_SIMULATOR_ENDPOINT || "http://localhost:8090";
 
 // Store active XMTP clients
 const activeClients: Map<string, ClientInfo> = new Map();
@@ -74,14 +79,20 @@ app.get("/", (_req: Request, res: Response): void => {
   res.send("Express + TypeScript Server");
 });
 
-app.get;
-
 // REST endpoints
 app.post(
   "/xmtp/initialize",
   async (req: Request, res: Response): Promise<void> => {
     try {
-      const { privateKey } = req.body;
+      const { tokenId } = req.body;
+
+      const client = new TappdClient(endpoint);
+
+      const randomDeriveKey = await client.deriveKey(
+        tokenId,
+        process.env.SALT!
+      );
+      const privateKey = keccak256(randomDeriveKey.asUint8Array());
 
       if (!privateKey) {
         res.status(400).json({ error: "Private key is required" });
