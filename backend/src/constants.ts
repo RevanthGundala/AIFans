@@ -162,3 +162,4 @@ export const ABI = [
 ] as const;
 export const PUBLISHER = "https://publisher.walrus-testnet.walrus.space";
 export const EPOCHS = 10;
+export const AGGREGATOR = "https://aggregator.walrus-testnet.walrus.space";

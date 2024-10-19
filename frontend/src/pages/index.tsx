@@ -49,7 +49,7 @@ export default function Home() {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ tokenId }),
+        body: JSON.stringify({ tokenId, prompt }),
       });
       const { blobId, wallet } = await res.json();
 

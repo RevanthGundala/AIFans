@@ -1,7 +1,7 @@
 import { HandlerContext } from "@xmtp/message-kit";
 import { XMTPMessage, Content, CommandContent } from "./types";
 import Replicate from "replicate";
-import { createPublicClient, http } from "viem";
+import { createPublicClient, createWalletClient, http } from "viem";
 import { sepolia } from "viem/chains";
 import { ADDRESS, ABI, PUBLISHER, EPOCHS } from "./constants";
 
@@ -9,7 +9,14 @@ const replicate = new Replicate({
   auth: process.env.REPLICATE_API_KEY,
 });
 
-export const tip = async (context: HandlerContext) => {};
+// export const tip = async (context: HandlerContext) => {
+
+//     const client = createWalletClient({
+//         transport: http(),
+//         chain:
+//     })
+
+// };
 
 export const generateImage = async (context: HandlerContext) => {};
 

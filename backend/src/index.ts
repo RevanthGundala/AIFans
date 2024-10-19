@@ -18,7 +18,11 @@ import {
 } from "./handlers.js";
 import { TappdClient } from "@phala/dstack-sdk";
 import { keccak256 } from "viem";
-import { EPOCHS, PUBLISHER } from "./constants";
+import { EPOCHS, PUBLISHER, AGGREGATOR } from "./constants";
+import { exec } from "child_process";
+import util from "util";
+import fs from "fs/promises";
+import path from "path";
 
 const app: Express = express();
 app.use(express.json());
@@ -100,13 +104,185 @@ app.get("/", (_req: Request, res: Response): void => {
 });
 
 app.post("/create-bot", async (req: Request, res: Response): Promise<void> => {
-  const { prompt } = req.body;
+  const { prompt, tokenId } = req.body;
   const blobId = await generateImageHelper(prompt);
+  const privateKey = await getPrivateKey(tokenId);
+  const { address } = privateKeyToAccount(privateKey as `0x${string}`);
   res.json({
     status: "success",
     blobId: blobId,
+    wallet: address,
   });
 });
+
+app.post("/publish-site", async (req: Request, res: Response): Promise<void> => {
+  const { blobId } = req.body;
+
+const execPromise = util.promisify(exec);
+
+const INLINE_SCRIPT = `
+#!/bin/bash
+set -e
+SITE_CONTENT_PATH=$1
+BLOB_ID=$2
+cd walrus-sites
+echo "Current directory: $(pwd)"
+echo "Contents of current directory:"
+ls -la
+echo "Executing site-builder..."
+OUTPUT=$(./target/release/site-builder --gas-budget 500000000 publish "$SITE_CONTENT_PATH")
+echo "Raw output from site-builder:"
+echo "$OUTPUT"
+URL=$(echo "$OUTPUT" | grep -o 'https://.*\\.walrus\\.site')
+echo "WALRUS_URL:$URL"
+`;
+
+
+  try {
+    console.log("Starting Walrus site creation...");
+    console.log("Blob ID:", blobId);
+
+    const htmlContent = `
+      <!DOCTYPE html>
+      <html lang="en">
+      <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Constant Blob Image Viewer</title>
+        <style>
+          body {
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background-color: #f0f0f0;
+            font-family: Arial, sans-serif;
+          }
+          #imageContainer {
+            max-width: 100%;
+            max-height: 100vh;
+            text-align: center;
+          }
+          #loadingMessage, #errorMessage {
+            font-size: 18px;
+            color: #333;
+            margin-bottom: 20px;
+          }
+          #retryButton {
+            padding: 10px 20px;
+            font-size: 16px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            cursor: pointer;
+            display: none;
+          }
+          #retryButton:hover {
+            background-color: #45a049;
+          }
+        </style>
+      </head>
+      <body>
+        <div id="imageContainer">
+          <p id="loadingMessage">Loading image...</p>
+          <p id="errorMessage" style="display:none;"></p>
+          <button id="retryButton">Retry</button>
+        </div>
+        <script>
+          const BLOB_ID = "${blobId}";
+          const AGGREGATOR = "${AGGREGATOR}"; // Replace with your actual aggregator URL
+
+          async function fetchAndRenderImage() {
+            const loadingMessage = document.getElementById('loadingMessage');
+            const errorMessage = document.getElementById('errorMessage');
+            const retryButton = document.getElementById('retryButton');
+            const imageContainer = document.getElementById('imageContainer');
+
+            loadingMessage.style.display = 'block';
+            errorMessage.style.display = 'none';
+            retryButton.style.display = 'none';
+
+            try {
+              const response = await fetch(\`\${AGGREGATOR}/v1/\${BLOB_ID}\`);
+              if (!response.ok) {
+                throw new Error('Failed to fetch image');
+              }
+              const blob = await response.blob();
+              const objectUrl = URL.createObjectURL(blob);
+
+              const img = new Image();
+              img.onload = function() {
+                loadingMessage.style.display = 'none';
+                imageContainer.appendChild(img);
+              };
+              img.onerror = function() {
+                throw new Error('Failed to load the image');
+              };
+              img.src = objectUrl;
+              img.style.maxWidth = '100%';
+              img.style.height = 'auto';
+            } catch (error) {
+              loadingMessage.style.display = 'none';
+              errorMessage.textContent = 'Error: ' + error.message;
+              errorMessage.style.display = 'block';
+              retryButton.style.display = 'inline-block';
+            }
+          }
+
+          document.getElementById('retryButton').addEventListener('click', fetchAndRenderImage);
+
+          // Initial load
+          fetchAndRenderImage();
+        </script>
+      </body>
+      </html>
+    `;
+
+    const tempDir = path.join(process.cwd(), "temp-site");
+    await fs.mkdir(tempDir, { recursive: true });
+    await fs.writeFile(path.join(tempDir, "index.html"), htmlContent);
+    console.log("Temporary directory created:", tempDir);
+
+    const scriptPath = path.join(process.cwd(), "temp-publish-script.sh");
+    await fs.writeFile(scriptPath, INLINE_SCRIPT);
+    await fs.chmod(scriptPath, "755");
+    console.log("Temporary script created:", scriptPath);
+
+    console.log("Executing script...");
+    const { stdout, stderr } = await execPromise(
+      `sh ${scriptPath} ${tempDir} ${blobId}`
+    );
+
+    console.log("Script execution complete.");
+    console.log("stdout:", stdout);
+
+    if (stderr) {
+      console.error("stderr from publish script:", stderr);
+    }
+
+    await fs.unlink(scriptPath);
+    await fs.rm(tempDir, { recursive: true, force: true });
+    console.log("Temporary files cleaned up.");
+
+    const urlMatch = stdout.match(/WALRUS_URL:(https:\/\/.*\.walrus\.site)/);
+    const publishedUrl = urlMatch ? urlMatch[1] : null;
+
+    if (publishedUrl) {
+      console.log("Published URL:", publishedUrl);
+      res.status(200).json({ publishedUrl });
+    } else {
+      console.error("Invalid URL returned from script");
+      console.error("Full stdout:", stdout);
+      throw new Error("Invalid URL returned from script");
+    }
+  } catch(error)
+ {
+  console.error(error)
+  res.status(500).json({})
+ }
+
 
 app.get(
   "/address/:tokenId",
