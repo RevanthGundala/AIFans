@@ -1,4 +1,4 @@
-export const ADDRESS = "0x113e09605B7C7485c74B7067fBFc5E1A92C7c4ce";
+export const ADDRESS = "0xb97797AdB692DCCb0907d90CeFe215638D76DAFC";
 export const ABI = [
   {
     type: "constructor",
@@ -48,9 +48,33 @@ export const ABI = [
   },
   {
     type: "function",
-    name: "getBotWallets",
+    name: "getBots",
     inputs: [],
-    outputs: [{ name: "", type: "address[]", internalType: "address[]" }],
+    outputs: [
+      {
+        name: "",
+        type: "tuple[]",
+        internalType: "struct AIFansFactory.Bot[]",
+        components: [
+          { name: "wallet", type: "address", internalType: "address" },
+          { name: "walrusSite", type: "string", internalType: "string" },
+          {
+            name: "subscriptionPrice",
+            type: "uint256",
+            internalType: "uint256",
+          },
+          { name: "imagePrice", type: "uint256", internalType: "uint256" },
+          { name: "voicePrice", type: "uint256", internalType: "uint256" },
+        ],
+      },
+    ],
+    stateMutability: "view",
+  },
+  {
+    type: "function",
+    name: "getNextTokenId",
+    inputs: [],
+    outputs: [{ name: "", type: "uint256", internalType: "uint256" }],
     stateMutability: "view",
   },
   {

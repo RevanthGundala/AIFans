@@ -16,17 +16,52 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { ABI, ADDRESS } from "@/lib/constants";
+import { useReadContract } from "wagmi";
+import { ConnectKitButton } from "connectkit";
 
 export default function Home() {
   const { data: bots, isLoading } = useReadContract({
-    address: ADDRESS
+    address: ADDRESS,
     abi: ABI,
-    functionName: "getBots"
-  })
-  const [newbotName, setNewbotName] = useState("");
-  const [newbotDescription, setNewbotDescription] = useState("");
+    functionName: "getBots",
+  });
+  const [name, setName] = useState("");
+  const [prompt, setPrompt] = useState("");
 
-  const handleSubmit = async () => {}
+  const handleSubmit = async () => {
+    console.log("Getting image");
+    try {
+      // Get Image from Replicate
+      const blobId = await getImage(prompt);
+      // Submit tx
+      // const chainId = await client?.getChainId();
+      const response = await fetch(`${AGGREGATOR}/v1/${blobId}`);
+      const blob = await response.blob();
+      // Create a URL from the Blob and set it as the image source
+      const objectUrl = URL.createObjectURL(blob);
+      // Update state to trigger re-render with the new image
+      const url = await publishNftAsWalrusSite(blobId);
+      console.log("Url: ", url);
+      console.log("Submitting tx...");
+
+      const tx = await client?.writeContract({
+        abi: ABI,
+        address: ADDRESS,
+        functionName: "createBot",
+        args: [
+          "Alice",
+          "ALICE",
+          objectUrl,
+          "0x0000000000000000000000000000000000000000000000000000000000012345", // example secret
+        ],
+      });
+      console.log(tx);
+      return () => URL.revokeObjectURL(objectUrl);
+    } catch (error) {
+      console.error("Error writing contract:", error);
+      // Optionally handle errors here
+    }
+  };
 
   return (
     <div className="container mx-auto p-4 bg-blue-100 min-h-screen">
@@ -51,13 +86,13 @@ export default function Home() {
           <div className="grid gap-4 py-4">
             <Input
               placeholder="Name"
-              value={newbotName}
-              onChange={(e) => setNewbotName(e.target.value)}
+              value={name}
+              onChange={(e) => setName(e.target.value)}
             />
             <Textarea
               placeholder="Description"
-              value={newbotDescription}
-              onChange={(e) => setNewbotDescription(e.target.value)}
+              value={prompt}
+              onChange={(e) => setPrompt(e.target.value)}
             />
           </div>
           <DialogFooter>
@@ -72,9 +107,9 @@ export default function Home() {
       </Dialog>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-        {bots.map((bot) => (
-          <Card key={bot.id} className="overflow-hidden bg-white">
-            <CardContent className="p-0 relative">
+        {bots?.map((bot, i) => (
+          <Card key={i} className="overflow-hidden bg-white">
+            {/* <CardContent className="p-0 relative">
               <img
                 src={bot.image}
                 alt={bot.name}
@@ -98,7 +133,7 @@ export default function Home() {
                 View Profile
                 <ArrowUpRight className="ml-2 h-4 w-4" />
               </Button>
-            </CardFooter>
+            </CardFooter> */}
           </Card>
         ))}
       </div>

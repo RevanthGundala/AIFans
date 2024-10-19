@@ -10,7 +10,7 @@ import {
   CommandContent,
   CleanupParams,
 } from "./types";
-import { generateText } from "./handlers.js";
+import { generateImage, generateText } from "./handlers.js";
 import { TappdClient } from "@phala/dstack-sdk";
 import { keccak256 } from "viem";
 
@@ -21,8 +21,16 @@ const port: number = 3000;
 const endpoint =
   process.env.DSTACK_SIMULATOR_ENDPOINT || "http://localhost:8090";
 
+const client = new TappdClient(endpoint);
+
 // Store active XMTP clients
 const activeClients: Map<string, ClientInfo> = new Map();
+
+async function getPrivateKey(tokenId: string): Promise<string> {
+  const randomDeriveKey = await client.deriveKey(tokenId, process.env.SALT!);
+  const privateKey = keccak256(randomDeriveKey.asUint8Array());
+  return privateKey;
+}
 
 // Initialize XMTP message handler with specific private key
 async function initializeXMTPClient(privateKey: string): Promise<ClientInfo> {
@@ -52,7 +60,10 @@ async function initializeXMTPClient(privateKey: string): Promise<ClientInfo> {
           // Handle as command
           console.log("command");
           const { command, params } = content as CommandContent;
-          // await handleCommand(command, params, senderAddress);
+          if (command === "image") {
+            await generateImage(context);
+          } else if (command === "voice") {
+          }
         } else {
           // Handle as regular text
           await generateText(context);
@@ -80,6 +91,25 @@ app.get("/", (_req: Request, res: Response): void => {
   res.send("Express + TypeScript Server");
 });
 
+app.get(
+  "/address/:tokenId",
+  async (req: Request, res: Response): Promise<void> => {
+    try {
+      const { tokenId } = req.params;
+      const privateKey = await getPrivateKey(tokenId);
+      const account = privateKeyToAccount(privateKey as `0x${string}`);
+
+      res.json({
+        status: "success",
+        address: account.address,
+      });
+    } catch (error) {
+      console.error("Failed to calculate address:", error);
+      res.status(500).json({ error: (error as Error).message });
+    }
+  }
+);
+
 // REST endpoints
 app.post(
   "/xmtp/initialize",
@@ -87,13 +117,12 @@ app.post(
     try {
       const { tokenId } = req.body;
 
-      const client = new TappdClient(endpoint);
+      if (!tokenId) {
+        res.status(400).json({ error: "Token ID is required" });
+        return;
+      }
 
-      const randomDeriveKey = await client.deriveKey(
-        tokenId,
-        process.env.SALT!
-      );
-      const privateKey = keccak256(randomDeriveKey.asUint8Array());
+      const privateKey = await getPrivateKey(tokenId);
 
       if (!privateKey) {
         res.status(400).json({ error: "Private key is required" });

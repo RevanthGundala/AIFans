@@ -1,5 +1,5 @@
 import { CommandGroup } from "@xmtp/message-kit";
-import { transaction, generateImage } from "./handlers.js";
+import { tip, generateImage } from "./handlers.js";
 
 export const commands: CommandGroup[] = [
   {
@@ -10,7 +10,7 @@ export const commands: CommandGroup[] = [
       {
         command: "/tip [amount] [token]",
         description: "Send a specified amount of a cryptocurrency.",
-        handler: transaction,
+        handler: tip,
         params: {
           amount: {
             default: 10,
