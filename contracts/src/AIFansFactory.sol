@@ -7,6 +7,7 @@ import {FanMedia} from "./FanMedia.sol";
 
 contract AIFansFactory is ReentrancyGuard {
     struct Bot {
+        string name;
         address wallet;
         string walrusSite;
         uint256 subscriptionPrice;
@@ -37,13 +38,19 @@ contract AIFansFactory is ReentrancyGuard {
         fanMediaAddress = _fanMediaAddress;
     }
 
-    function createBot(string memory blob, string memory walrusSite, address botWallet) external {
+    function createBot(string memory name, string memory blob, string memory walrusSite, address botWallet) external {
         require(botWallet != address(0), "Invalid bot name");
         uint256 tokenId = SoulFan(soulFanAddress).mint(blob, botWallet);
 
         // Update state vars
-        bots[tokenId] =
-            Bot({wallet: botWallet, walrusSite: walrusSite, subscriptionPrice: 0, imagePrice: 0, voicePrice: 0});
+        bots[tokenId] = Bot({
+            name: name,
+            wallet: botWallet,
+            walrusSite: walrusSite,
+            subscriptionPrice: 0,
+            imagePrice: 0,
+            voicePrice: 0
+        });
 
         emit BotCreated(botWallet, tokenId, block.timestamp);
     }

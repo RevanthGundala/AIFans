@@ -160,3 +160,5 @@ export const ABI = [
     anonymous: false,
   },
 ] as const;
+export const PUBLISHER = "https://publisher.walrus-testnet.walrus.space";
+export const EPOCHS = 10;

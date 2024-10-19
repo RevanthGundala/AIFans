@@ -3,18 +3,13 @@ import { XMTPMessage, Content, CommandContent } from "./types";
 import Replicate from "replicate";
 import { createPublicClient, http } from "viem";
 import { sepolia } from "viem/chains";
-import { ADDRESS, ABI } from "./constants";
+import { ADDRESS, ABI, PUBLISHER, EPOCHS } from "./constants";
 
 const replicate = new Replicate({
   auth: process.env.REPLICATE_API_KEY,
 });
 
-const client = createPublicClient({
-  chain: sepolia,
-  transport: http(),
-});
-
-export const tip = async () => {};
+export const tip = async (context: HandlerContext) => {};
 
 export const generateImage = async (context: HandlerContext) => {};
 
@@ -42,4 +37,38 @@ export const generateText = async (context: HandlerContext) => {
     output += event.toString();
   }
   await context.send(output);
+};
+
+export const generateImageHelper = async (prompt: string) => {
+  const input = {
+    prompt,
+  };
+
+  const model =
+    process.env.NODE_ENV === "development"
+      ? "bytedance/sdxl-lightning-4step:5599ed30703defd1d160a25a63321b4dec97101d98b4674bcc56e41f62f35637"
+      : "black-forest-labs/flux-schnell";
+
+  console.log("Using image model:", model);
+
+  const output = await replicate.run(model, {
+    input,
+  });
+  // Ensure output is a string URL
+  console.log("output: ", output);
+  // replicate url
+  const replicateUrl = Array.isArray(output) ? output[0] : output;
+  const blob = await fetch(replicateUrl).then((res) => res.blob());
+
+  // Send the blob to Walrus using a PUT request
+  const walrusResponse = await fetch(`${PUBLISHER}/v1/store?epochs=${EPOCHS}`, {
+    method: "PUT",
+    body: blob, // Directly send the blob as the request body
+  });
+
+  const data = await walrusResponse.json();
+  if ((data as any).alreadyCertified)
+    throw new Error("Image already certified");
+  console.log("Data: ", data);
+  return data;
 };

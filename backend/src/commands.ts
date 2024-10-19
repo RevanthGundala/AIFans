@@ -17,9 +17,9 @@ export const commands: CommandGroup[] = [
             type: "number",
           },
           token: {
-            default: "usdc",
+            default: "eth",
             type: "string",
-            values: ["usdc", "eth"],
+            values: ["eth"],
           },
         },
       },

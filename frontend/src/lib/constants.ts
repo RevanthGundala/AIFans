@@ -160,3 +160,4 @@ export const ABI = [
     anonymous: false,
   },
 ] as const;
+export const AGGREGATOR = "https://aggregator.walrus-testnet.walrus.space";

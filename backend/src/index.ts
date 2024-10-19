@@ -10,9 +10,15 @@ import {
   CommandContent,
   CleanupParams,
 } from "./types";
-import { generateImage, generateText } from "./handlers.js";
+import {
+  generateImage,
+  generateImageHelper,
+  generateText,
+  tip,
+} from "./handlers.js";
 import { TappdClient } from "@phala/dstack-sdk";
 import { keccak256 } from "viem";
+import { EPOCHS, PUBLISHER } from "./constants";
 
 const app: Express = express();
 app.use(express.json());
@@ -63,6 +69,8 @@ async function initializeXMTPClient(privateKey: string): Promise<ClientInfo> {
           if (command === "image") {
             await generateImage(context);
           } else if (command === "voice") {
+          } else if (command === "tip") {
+            await tip(context);
           }
         } else {
           // Handle as regular text
@@ -89,6 +97,15 @@ async function initializeXMTPClient(privateKey: string): Promise<ClientInfo> {
 
 app.get("/", (_req: Request, res: Response): void => {
   res.send("Express + TypeScript Server");
+});
+
+app.post("/create-bot", async (req: Request, res: Response): Promise<void> => {
+  const { prompt } = req.body;
+  const blobId = await generateImageHelper(prompt);
+  res.json({
+    status: "success",
+    blobId: blobId,
+  });
 });
 
 app.get(

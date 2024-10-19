@@ -15,9 +15,10 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { ABI, ADDRESS } from "@/lib/constants";
+import { ABI, ADDRESS, AGGREGATOR } from "@/lib/constants";
 import { useReadContract } from "wagmi";
 import { ConnectKitButton } from "connectkit";
+import { useAccount, useWalletClient } from "wagmi";
 
 export default function Home() {
   const { data: bots, isLoading } = useReadContract({
@@ -25,41 +26,55 @@ export default function Home() {
     abi: ABI,
     functionName: "getBots",
   });
+  const { address } = useAccount();
+  const { data: client } = useWalletClient({
+    account: address,
+  });
+
+  const { data: tokenId } = useReadContract({
+    address: ADDRESS,
+    abi: ABI,
+    functionName: "getNextTokenId",
+  });
   const [name, setName] = useState("");
   const [prompt, setPrompt] = useState("");
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
 
   const handleSubmit = async () => {
     console.log("Getting image");
     try {
       // Get Image from Replicate
-      const blobId = await getImage(prompt);
+      const res = await fetch(`${apiUrl}/create-bot`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ tokenId }),
+      });
+      const { blobId, wallet } = await res.json();
+
       // Submit tx
-      // const chainId = await client?.getChainId();
       const response = await fetch(`${AGGREGATOR}/v1/${blobId}`);
       const blob = await response.blob();
-      // Create a URL from the Blob and set it as the image source
       const objectUrl = URL.createObjectURL(blob);
-      // Update state to trigger re-render with the new image
-      const url = await publishNftAsWalrusSite(blobId);
-      console.log("Url: ", url);
+
+      // Publish site
+      const publishRes = await fetch(`${apiUrl}/publish-site`);
+      const { url } = await publishRes.json();
+      console.log("Url:", url);
       console.log("Submitting tx...");
 
       const tx = await client?.writeContract({
         abi: ABI,
         address: ADDRESS,
         functionName: "createBot",
-        args: [
-          "Alice",
-          "ALICE",
-          objectUrl,
-          "0x0000000000000000000000000000000000000000000000000000000000012345", // example secret
-        ],
+        args: [name, blobId, objectUrl, wallet],
       });
       console.log(tx);
+
       return () => URL.revokeObjectURL(objectUrl);
     } catch (error) {
       console.error("Error writing contract:", error);
-      // Optionally handle errors here
     }
   };
 
