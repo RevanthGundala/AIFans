@@ -40,9 +40,38 @@ export default function Home() {
   const [prompt, setPrompt] = useState("");
   const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
 
-  const handleSubmit = async () => {
-    console.log("Getting image");
+  const handleSubscribe = async (tokenId: bigint) => {
     try {
+      const tx = await client?.writeContract({
+        abi: ABI,
+        address: ADDRESS,
+        functionName: "subscribe",
+        args: [tokenId],
+      });
+      console.log(tx);
+    } catch (err) {
+      console.log(err);
+    }
+  };
+  const handleRequestMedia = async (tokenId: bigint, isImage: boolean) => {
+    try {
+      const response = await fetch("");
+      const { blobId } = await response.json();
+      const tx = await client?.writeContract({
+        abi: ABI,
+        address: ADDRESS,
+        functionName: "requestMedia",
+        args: [tokenId, blobId, isImage],
+      });
+      console.log(tx);
+    } catch (err) {
+      console.log(err);
+    }
+  };
+
+  const handleSubmit = async () => {
+    try {
+      console.log("Generating image...");
       // Get Image from Replicate
       const res = await fetch(`${apiUrl}/create-bot`, {
         method: "POST",
@@ -51,19 +80,21 @@ export default function Home() {
         },
         body: JSON.stringify({ tokenId, prompt }),
       });
-      const { blobId, wallet } = await res.json();
+      const data = await res.json();
+      const { blobId, wallet } = data;
 
+      console.log("Fetching Url...");
       // Submit tx
       const response = await fetch(`${AGGREGATOR}/v1/${blobId}`);
       const blob = await response.blob();
       const objectUrl = URL.createObjectURL(blob);
 
+      console.log("Publishing site...");
       // Publish site
       const publishRes = await fetch(`${apiUrl}/publish-site`);
       const { url } = await publishRes.json();
       console.log("Url:", url);
-      console.log("Submitting tx...");
-
+      console.log("Submitting transaction...");
       const tx = await client?.writeContract({
         abi: ABI,
         address: ADDRESS,

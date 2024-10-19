@@ -18,13 +18,15 @@ import {
 } from "./handlers.js";
 import { TappdClient } from "@phala/dstack-sdk";
 import { keccak256 } from "viem";
-import { EPOCHS, PUBLISHER, AGGREGATOR } from "./constants";
+import { AGGREGATOR } from "./constants.js";
 import { exec } from "child_process";
 import util from "util";
 import fs from "fs/promises";
 import path from "path";
+import cors from "cors";
 
 const app: Express = express();
+app.options("*", cors()); // Enable pre-flight for all routes
 app.use(express.json());
 const port: number = 3000;
 
@@ -37,9 +39,11 @@ const client = new TappdClient(endpoint);
 const activeClients: Map<string, ClientInfo> = new Map();
 
 async function getPrivateKey(tokenId: string): Promise<string> {
-  const randomDeriveKey = await client.deriveKey(tokenId, process.env.SALT!);
-  const privateKey = keccak256(randomDeriveKey.asUint8Array());
-  return privateKey;
+  // TODO:
+  // const randomDeriveKey = await client.deriveKey(tokenId, process.env.SALT!);
+  // const privateKey = keccak256(randomDeriveKey.asUint8Array());
+  return "0x3654025b90169617331c6b8d8a61b1268a592689626b3f511ffcaf43871e09b6";
+  // return privateKey;
 }
 
 // Initialize XMTP message handler with specific private key
@@ -86,8 +90,6 @@ async function initializeXMTPClient(privateKey: string): Promise<ClientInfo> {
       privateKey: privateKey,
     }
   );
-  // TODO: ask how to pass in tokenId as parameter
-
   // Get the address from the private key
   const account: PrivateKeyAccount = privateKeyToAccount(
     privateKey as `0x${string}`
@@ -104,16 +106,23 @@ app.get("/", (_req: Request, res: Response): void => {
 });
 
 app.post("/create-bot", async (req: Request, res: Response): Promise<void> => {
-  const { prompt, tokenId } = req.body;
-  const blobId = await generateImageHelper(prompt);
-  const privateKey = await getPrivateKey(tokenId);
-  const { address } = privateKeyToAccount(privateKey as `0x${string}`);
-
-  res.json({
-    status: "success",
-    blobId: blobId,
-    wallet: address,
-  });
+  try {
+    const { prompt, tokenId } = req.body;
+    const blobId = await generateImageHelper(prompt);
+    const privateKey = await getPrivateKey(tokenId);
+    const { address } = privateKeyToAccount(privateKey as `0x${string}`);
+    console.log("Returning...");
+    res.json({
+      status: "success",
+      blobId: blobId,
+      wallet: address,
+    });
+  } catch (err) {
+    console.log(err);
+    res.json({
+      status: "error",
+    });
+  }
 });
 
 app.post(

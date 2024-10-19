@@ -2,8 +2,7 @@ import { HandlerContext } from "@xmtp/message-kit";
 import { XMTPMessage, Content, CommandContent } from "./types";
 import Replicate from "replicate";
 import { Chain, createPublicClient, createWalletClient, http } from "viem";
-import { sepolia } from "viem/chains";
-import { ADDRESS, ABI, PUBLISHER, EPOCHS } from "./constants";
+import { ADDRESS, ABI, PUBLISHER, EPOCHS } from "./constants.js";
 
 const replicate = new Replicate({
   auth: process.env.REPLICATE_API_KEY,
@@ -52,35 +51,43 @@ export const generateText = async (context: HandlerContext) => {
 };
 
 export const generateImageHelper = async (prompt: string) => {
-  const input = {
-    prompt,
-  };
+  try {
+    const input = {
+      prompt,
+    };
 
-  const model =
-    process.env.NODE_ENV === "development"
-      ? "bytedance/sdxl-lightning-4step:5599ed30703defd1d160a25a63321b4dec97101d98b4674bcc56e41f62f35637"
-      : "black-forest-labs/flux-schnell";
+    const model =
+      process.env.NODE_ENV === "development"
+        ? "bytedance/sdxl-lightning-4step:5599ed30703defd1d160a25a63321b4dec97101d98b4674bcc56e41f62f35637"
+        : "black-forest-labs/flux-schnell";
 
-  console.log("Using image model:", model);
+    console.log("Using image model:", model);
 
-  const output = await replicate.run(model, {
-    input,
-  });
-  // Ensure output is a string URL
-  console.log("output: ", output);
-  // replicate url
-  const replicateUrl = Array.isArray(output) ? output[0] : output;
-  const blob = await fetch(replicateUrl).then((res) => res.blob());
+    const output = await replicate.run(model, {
+      input,
+    });
+    // Ensure output is a string URL
+    console.log("output: ", output);
+    // replicate url
+    const replicateUrl = Array.isArray(output) ? output[0] : output;
+    const blob = await fetch(replicateUrl).then((res) => res.blob());
 
-  // Send the blob to Walrus using a PUT request
-  const walrusResponse = await fetch(`${PUBLISHER}/v1/store?epochs=${EPOCHS}`, {
-    method: "PUT",
-    body: blob, // Directly send the blob as the request body
-  });
+    // Send the blob to Walrus using a PUT request
+    const walrusResponse = await fetch(
+      `${PUBLISHER}/v1/store?epochs=${EPOCHS}`,
+      {
+        method: "PUT",
+        body: blob, // Directly send the blob as the request body
+      }
+    );
 
-  const data = await walrusResponse.json();
-  if ((data as any).alreadyCertified)
-    throw new Error("Image already certified");
-  console.log("Data: ", data);
-  return data;
+    const data = await walrusResponse.json();
+    if ((data as any).alreadyCertified)
+      throw new Error("Image already certified");
+    console.log("Data: ", data);
+    return (data as any).newlyCreated.blobObject.blobId;
+  } catch (err) {
+    console.log(err);
+    return null;
+  }
 };

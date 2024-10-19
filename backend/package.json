@@ -17,11 +17,13 @@
   "dependencies": {
     "@phala/dstack-sdk": "^0.1.4",
     "@xmtp/message-kit": "^1.1.0",
+    "cors": "^2.8.5",
     "express": "^4.21.1",
-    "replicate": "^1.0.1",
+    "replicate": "=0.34.0",
     "viem": "^2.21.29"
   },
   "devDependencies": {
+    "@types/cors": "^2.8.17",
     "@types/express": "^5.0.0",
     "@types/node": "^22.7.7",
     "cross-env": "^7.0.3",
