@@ -2,6 +2,7 @@
   "include": ["src/**/*"],
   "compilerOptions": {
     "outDir": "./dist",
+    "rootDir": "./src",
     "esModuleInterop": true,
     "declaration": true,
     "declarationMap": true,

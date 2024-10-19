@@ -1,8 +1,5 @@
 import { CommandGroup } from "@xmtp/message-kit";
-
-const transaction = async (params: any) => {};
-
-const generateImage = async (params: any) => {};
+import { transaction, generateImage } from "./handlers.js";
 
 export const commands: CommandGroup[] = [
   {

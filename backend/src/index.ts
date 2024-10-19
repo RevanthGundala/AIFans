@@ -3,33 +3,14 @@ import type { Express, Request, Response } from "express";
 import { HandlerContext, run } from "@xmtp/message-kit";
 import { privateKeyToAccount, PrivateKeyAccount } from "viem/accounts";
 import { commands } from "./commands";
-
-// Type definitions
-interface ClientInfo {
-  cleanup: () => Promise<void>;
-  address: string;
-}
-
-interface XMTPMessage {
-  content: string | CommandContent;
-  typeId: string;
-  senderAddress: string;
-}
-
-interface CommandContent {
-  command: string;
-  params: Record<string, any>;
-}
-
-interface InitializeRequest extends Request {
-  body: {
-    privateKey: string;
-  };
-}
-
-interface CleanupParams {
-  address: string;
-}
+import {
+  ClientInfo,
+  XMTPMessage,
+  Content,
+  CommandContent,
+  CleanupParams,
+} from "./types";
+import { generateText } from "./handlers.js";
 
 const app: Express = express();
 app.use(express.json());
@@ -61,9 +42,15 @@ async function initializeXMTPClient(privateKey: string): Promise<ClientInfo> {
       const { content, typeId } = message;
 
       if (typeId === "text") {
-        if (typeof content === "object") {
+        // Check if content is a command format
+        if ("command" in content) {
+          // Handle as command
+          console.log("command");
           const { command, params } = content as CommandContent;
-          // Use the extracted command and params
+          // await handleCommand(command, params, senderAddress);
+        } else {
+          // Handle as regular text
+          await generateText(context);
         }
       }
     },
@@ -90,7 +77,7 @@ app.get("/", (_req: Request, res: Response): void => {
 // REST endpoints
 app.post(
   "/xmtp/initialize",
-  async (req: InitializeRequest, res: Response): Promise<void> => {
+  async (req: Request, res: Response): Promise<void> => {
     try {
       const { privateKey } = req.body;
 
