@@ -2,7 +2,7 @@ import express from "express";
 import type { Express, Request, Response } from "express";
 import { HandlerContext, run } from "@xmtp/message-kit";
 import { privateKeyToAccount, PrivateKeyAccount } from "viem/accounts";
-import { commands } from "./command";
+import { commands } from "./commands";
 
 // Type definitions
 interface ClientInfo {
