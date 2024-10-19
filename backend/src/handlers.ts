@@ -20,12 +20,6 @@ export const subscribe = async () => {};
 
 export const generateText = async (context: HandlerContext) => {
   console.log("generateText");
-  const isSubscribed = await client.readContract({
-    address: ADDRESS,
-    abi: ABI,
-    functionName: "getSubscription",
-    args: [sender, tokenId],
-  });
   const message = context.message as unknown as XMTPMessage;
   const { content } = message;
   const { content: text } = content as Content;

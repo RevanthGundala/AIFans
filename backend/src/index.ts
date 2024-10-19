@@ -63,6 +63,7 @@ async function initializeXMTPClient(privateKey: string): Promise<ClientInfo> {
       privateKey: privateKey,
     }
   );
+  // TODO: ask how to pass in tokenId as parameter
 
   // Get the address from the private key
   const account: PrivateKeyAccount = privateKeyToAccount(

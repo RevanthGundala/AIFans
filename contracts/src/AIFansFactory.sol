@@ -96,4 +96,8 @@ contract AIFansFactory is ReentrancyGuard {
     function getSubscription(address user, uint256 tokenId) external view returns (bool) {
         return subscriptions[user][tokenId];
     }
+
+    function getNextTokenId() external view returns (uint256) {
+        return SoulFan(soulFanAddress).tokenId();
+    }
 }

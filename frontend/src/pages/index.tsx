@@ -1,115 +1,177 @@
-import Image from "next/image";
-import localFont from "next/font/local";
+"use client";
 
-const geistSans = localFont({
-  src: "./fonts/GeistVF.woff",
-  variable: "--font-geist-sans",
-  weight: "100 900",
-});
-const geistMono = localFont({
-  src: "./fonts/GeistMonoVF.woff",
-  variable: "--font-geist-mono",
-  weight: "100 900",
-});
+import { useState, useEffect } from "react";
+import { ArrowUpRight } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardFooter } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+
+type Profile = {
+  id: number;
+  name: string;
+  image: string;
+  isOnline: boolean;
+};
 
 export default function Home() {
-  return (
-    <div
-      className={`${geistSans.variable} ${geistMono.variable} grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]`}
-    >
-      <main className="flex flex-col gap-8 row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="https://nextjs.org/icons/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-semibold">
-              src/pages/index.tsx
-            </code>
-            .
-          </li>
-          <li>Save and see your changes instantly.</li>
-        </ol>
+  const [profiles, setProfiles] = useState<Profile[]>([]);
+  const [newProfileName, setNewProfileName] = useState("");
+  const [newProfileDescription, setNewProfileDescription] = useState("");
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=default-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="https://nextjs.org/icons/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
+  useEffect(() => {
+    // Simulating fetching profiles
+    setProfiles([
+      {
+        id: 1,
+        name: "Alex",
+        image: "/placeholder.svg?height=300&width=300",
+        isOnline: true,
+      },
+      {
+        id: 2,
+        name: "Sam",
+        image: "/placeholder.svg?height=300&width=300",
+        isOnline: false,
+      },
+      {
+        id: 3,
+        name: "Jordan",
+        image: "/placeholder.svg?height=300&width=300",
+        isOnline: true,
+      },
+      {
+        id: 4,
+        name: "Taylor",
+        image: "/placeholder.svg?height=300&width=300",
+        isOnline: false,
+      },
+      {
+        id: 5,
+        name: "Casey",
+        image: "/placeholder.svg?height=300&width=300",
+        isOnline: true,
+      },
+      {
+        id: 6,
+        name: "Riley",
+        image: "/placeholder.svg?height=300&width=300",
+        isOnline: false,
+      },
+    ]);
+  }, []);
+
+  const handleCreateProfile = () => {
+    // Here you would typically send this data to your backend
+    console.log("Creating profile:", {
+      name: newProfileName,
+      description: newProfileDescription,
+    });
+    // For now, let's just add it to our local state
+    setProfiles((prev) => [
+      ...prev,
+      {
+        id: prev.length + 1,
+        name: newProfileName,
+        image: "/placeholder.svg?height=300&width=300",
+        isOnline: true,
+      },
+    ]);
+  };
+
+  const handleConnectWallet = () => {
+    // This function does nothing for now
+    console.log("Connect Wallet clicked");
+  };
+
+  return (
+    <div className="container mx-auto p-4 bg-blue-100 min-h-screen">
+      <header className="flex justify-between items-center mb-6">
+        <h1 className="text-2xl font-bold text-blue-500">ConnectMe</h1>
+        <Button
+          onClick={handleConnectWallet}
+          className="bg-blue-400 hover:bg-blue-500"
+        >
+          Connect Wallet
+        </Button>
+      </header>
+
+      <Dialog>
+        <DialogTrigger asChild>
+          <Button className="mb-6 bg-blue-400 hover:bg-blue-500">
+            Create Profile
+          </Button>
+        </DialogTrigger>
+        <DialogContent className="bg-white">
+          <DialogHeader>
+            <DialogTitle>Create New Profile</DialogTitle>
+            <DialogDescription>
+              Fill in the details to create your new profile.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <Input
+              placeholder="Name"
+              value={newProfileName}
+              onChange={(e) => setNewProfileName(e.target.value)}
             />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:min-w-44"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=default-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
-        </div>
-      </main>
-      <footer className="row-start-3 flex gap-6 flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=default-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="https://nextjs.org/icons/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=default-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="https://nextjs.org/icons/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=default-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="https://nextjs.org/icons/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+            <Textarea
+              placeholder="Description"
+              value={newProfileDescription}
+              onChange={(e) => setNewProfileDescription(e.target.value)}
+            />
+          </div>
+          <DialogFooter>
+            <Button
+              onClick={handleCreateProfile}
+              className="bg-blue-400 hover:bg-blue-500"
+            >
+              Submit
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+        {profiles.map((profile) => (
+          <Card key={profile.id} className="overflow-hidden bg-white">
+            <CardContent className="p-0 relative">
+              <img
+                src={profile.image}
+                alt={profile.name}
+                className="w-full h-64 object-cover"
+              />
+              <div
+                className={`absolute top-2 right-2 w-3 h-3 rounded-full ${
+                  profile.isOnline ? "bg-green-500" : "bg-red-500"
+                }`}
+              />
+            </CardContent>
+            <CardFooter className="flex justify-between items-center">
+              <h2 className="text-lg font-semibold text-blue-500">
+                {profile.name}
+              </h2>
+              <Button
+                variant="outline"
+                className="text-blue-400 border-blue-400 hover:bg-blue-100"
+                onClick={() => console.log(`View profile of ${profile.name}`)}
+              >
+                View Profile
+                <ArrowUpRight className="ml-2 h-4 w-4" />
+              </Button>
+            </CardFooter>
+          </Card>
+        ))}
+      </div>
     </div>
   );
 }
