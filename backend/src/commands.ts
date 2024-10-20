@@ -13,13 +13,13 @@ export const commands: CommandGroup[] = [
         handler: tip,
         params: {
           amount: {
-            default: 10,
+            default: 0.01,
             type: "number",
           },
           token: {
             default: "eth",
             type: "string",
-            values: ["eth"],
+            values: ["eth", "usdc"],
           },
           network: {
             default: "sepolia",

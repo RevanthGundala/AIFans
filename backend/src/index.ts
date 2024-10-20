@@ -18,8 +18,15 @@ import {
   tip,
 } from "./handlers.js";
 import { TappdClient } from "@phala/dstack-sdk";
-import { keccak256 } from "viem";
-import { ABI, ADDRESS, AGGREGATOR, EPOCHS, PUBLISHER } from "./constants.js";
+import { Account, HttpTransport, keccak256, Transport } from "viem";
+import {
+  ABI,
+  ADDRESS,
+  AGGREGATOR,
+  EPOCHS,
+  PUBLISHER,
+  SOUL_FAN,
+} from "./constants.js";
 import { exec } from "child_process";
 import util from "util";
 import fs from "fs/promises";
@@ -28,6 +35,15 @@ import cors from "cors";
 import { initialize, getKeyringFromSeed } from "avail-js-sdk";
 import { ISubmittableResult } from "@polkadot/types/types/extrinsic";
 import { H256 } from "@polkadot/types/interfaces/runtime";
+import {
+  AddressZero,
+  IpMetadata,
+  PIL_TYPE,
+  RegisterIpAndAttachPilTermsResponse,
+  StoryClient,
+  StoryConfig,
+} from "@story-protocol/core-sdk";
+import { http } from "viem";
 
 const app: Express = express();
 app.use(cors()); // Enable CORS for all routes
@@ -110,6 +126,41 @@ async function initializeXMTPClient(privateKey: string): Promise<ClientInfo> {
 app.get("/", (_req: Request, res: Response): void => {
   res.send("Express + TypeScript Server");
 });
+
+async function registerNFTOnStory(
+  tokenId: string,
+  blobId: string,
+  walrusSite: string
+): Promise<void> {
+  const privateKey = await getPrivateKey(tokenId!);
+  const config: StoryConfig = {
+    account: privateKeyToAccount(privateKey as `0x${string}`) as any,
+    transport: http("https://testnet.storyrpc.io") as any,
+    chainId: "iliad",
+  };
+  const client = StoryClient.newClient(config);
+  const response: RegisterIpAndAttachPilTermsResponse =
+    await client.ipAsset.registerIpAndAttachPilTerms({
+      nftContract: SOUL_FAN,
+      tokenId: tokenId!,
+      pilType: PIL_TYPE.NON_COMMERCIAL_REMIX,
+      mintingFee: 0, // empty - doesn't apply
+      currency: AddressZero, // empty - doesn't apply
+      ipMetadata: {
+        ipMetadataURI: blobId,
+        ipMetadataHash: keccak256(`0x${blobId}`),
+        nftMetadataURI: walrusSite,
+        nftMetadataHash: keccak256(`0x${walrusSite}`),
+      },
+      txOptions: { waitForTransaction: false },
+    });
+  console.log(
+    `Root IPA created at transaction hash ${response.txHash}, IPA ID: ${response.ipId}`
+  );
+  console.log(
+    `View on the explorer: https://explorer.story.foundation/ipa/${response.ipId}`
+  );
+}
 
 app.get("/submit-data", async (req: Request, res: Response): Promise<void> => {
   const { data } = await req.body;
@@ -210,6 +261,7 @@ app.post("/create-bot", async (req: Request, res: Response): Promise<void> => {
     console.log("Address:", address);
     const response = await fetch(`${AGGREGATOR}/v1/${blobId}`);
     const rawResponse = await response.arrayBuffer();
+
     res.json({
       status: "success",
       blobId,
@@ -464,6 +516,7 @@ app.post(
       const publishedUrl = urlMatch ? urlMatch[1] : null;
 
       if (publishedUrl) {
+        await registerNFTOnStory(tokenId, blobId, publishedUrl);
         console.log("Published URL:", publishedUrl);
         res.status(200).json({ url: publishedUrl });
       } else {

@@ -29,7 +29,17 @@ const adMessages = [
 ];
 
 export const PopupAds = () => {
-  const [activeAds, setActiveAds] = useState([]);
+  interface Ad {
+    id: number;
+    title: string;
+    content: string;
+    position: {
+      top: string;
+      left: string;
+    };
+  }
+
+  const [activeAds, setActiveAds] = useState<Ad[]>([]);
   const [showMainPopup, setShowMainPopup] = useState(false);
   const [showFloatingHearts, setShowFloatingHearts] = useState(false);
 
@@ -71,18 +81,18 @@ export const PopupAds = () => {
     };
   }, [activeAds]);
 
-  const removeAd = (id) => {
+  const removeAd = (id: number) => {
     setActiveAds((prev) => prev.filter((ad) => ad.id !== id));
   };
 
   return (
     <div className="fixed inset-0 pointer-events-none z-50">
       {/* Floating Ads */}
-      {activeAds.map((ad) => (
+      {activeAds.map((ad, i) => (
         <Card
-          key={ad.id}
+          key={i}
           className="absolute p-4 w-72 shadow-lg pointer-events-auto bg-white/90 backdrop-blur-sm animate-bounce"
-          style={{ top: ad.position.top, left: ad.position.left }}
+          style={{ top: ad?.position?.top, left: ad?.position?.left }}
           onClick={() => removeAd(ad.id)}
         >
           <div className="flex justify-between items-start">
