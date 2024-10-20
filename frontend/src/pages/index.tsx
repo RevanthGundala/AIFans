@@ -20,6 +20,7 @@ import { useReadContract } from "wagmi";
 import { ConnectKitButton } from "connectkit";
 import { useAccount, useWalletClient } from "wagmi";
 import { useRouter } from "next/router";
+import { PopupAds } from "@/components/popup-ads";
 
 export default function Home() {
   const {
@@ -269,6 +270,8 @@ export default function Home() {
           </Card>
         ))}
       </div>
+
+      <PopupAds />
     </div>
   );
 }
