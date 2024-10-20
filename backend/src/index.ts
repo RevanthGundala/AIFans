@@ -278,12 +278,12 @@ app.post(
       await fs.rm(tempDir, { recursive: true, force: true });
       console.log("Temporary files cleaned up.");
 
-      const urlMatch = stdout.match(/WALRUS_URL:(https:\/\/.*\.walrus\.site)/);
+      const urlMatch = stdout.match(/WALRUS_URL:(.*\.walrus\.site)/);
       const publishedUrl = urlMatch ? urlMatch[1] : null;
 
       if (publishedUrl) {
         console.log("Published URL:", publishedUrl);
-        res.status(200).json({ publishedUrl });
+        res.status(200).json({ url: publishedUrl });
       } else {
         console.error("Invalid URL returned from script");
         console.error("Full stdout:", stdout);

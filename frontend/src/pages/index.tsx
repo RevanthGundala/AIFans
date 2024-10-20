@@ -6,6 +6,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { useOwnedNFTs, useContract } from "@thirdweb-dev/react";
+
 import {
   Dialog,
   DialogContent,
@@ -15,8 +17,8 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { ABI, ADDRESS, AGGREGATOR } from "@/lib/constants";
-import { useReadContract } from "wagmi";
+import { ABI, ADDRESS, AGGREGATOR, FAN_MEDIA, SOUL_FAN } from "@/lib/constants";
+import { useChainId, useChains, useReadContract } from "wagmi";
 import { ConnectKitButton } from "connectkit";
 import { useAccount, useWalletClient } from "wagmi";
 
@@ -36,9 +38,51 @@ export default function Home() {
     abi: ABI,
     functionName: "getNextTokenId",
   });
+
+  const { contract: soulFan } = useContract(SOUL_FAN);
+  const { contract: fanMedia } = useContract(FAN_MEDIA);
+  const [wallets, setWallets] = useState<string[]>([]);
+  const [selectedBot, setSelectedBot] = useState();
+
+  const { data: soulboundNFTs } = useMultipleOwnedNFTs(soulFan, wallets);
+  const { data: fanMediaNFTs } = useOwnedNFTs(
+    fanMedia,
+    selectedBot?.wallet || ""
+  );
+
+  console.log("soulboundNFTs", soulboundNFTs);
+
   const [name, setName] = useState("");
   const [prompt, setPrompt] = useState("");
+  const [imageUrls, setImageUrls] = useState<string[]>([]);
   const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
+
+  useEffect(() => {
+    const temp: string[] = bots?.map((bot) => bot.wallet) || [];
+    setWallets(temp);
+  }, [bots]);
+
+  function useMultipleOwnedNFTs(contract, addresses) {
+    const [nfts, setNfts] = useState({});
+
+    // Create multiple hooks for each address
+    const nftHooks = addresses?.map((address) =>
+      useOwnedNFTs(contract, address)
+    );
+
+    // Combine results when any hook updates
+    useEffect(() => {
+      if (!addresses || !nftHooks) return;
+
+      const newNfts = {};
+      addresses.forEach((address, i) => {
+        newNfts[address] = nftHooks[i].data;
+      });
+      setNfts(newNfts);
+    }, [addresses, nftHooks]);
+
+    return { data: nfts };
+  }
 
   const handleSubscribe = async (tokenId: bigint) => {
     try {
@@ -101,6 +145,7 @@ export default function Home() {
       });
       const { url } = await publishRes.json();
       console.log("Url:", url);
+      if (!url) throw new Error("Failed to publish");
       console.log("Submitting transaction...");
       const tx = await client?.writeContract({
         abi: ABI,
@@ -162,16 +207,14 @@ export default function Home() {
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
         {bots?.map((bot, i) => (
           <Card key={i} className="overflow-hidden bg-white">
-            {/* <CardContent className="p-0 relative">
+            <CardContent className="p-0 relative">
               <img
                 src={bot.image}
                 alt={bot.name}
                 className="w-full h-64 object-cover"
               />
               <div
-                className={`absolute top-2 right-2 w-3 h-3 rounded-full ${
-                  bot.isOnline ? "bg-green-500" : "bg-red-500"
-                }`}
+                className={`absolute top-2 right-2 w-3 h-3 rounded-full ${"bg-green-500"}`}
               />
             </CardContent>
             <CardFooter className="flex justify-between items-center">
@@ -186,7 +229,7 @@ export default function Home() {
                 View Profile
                 <ArrowUpRight className="ml-2 h-4 w-4" />
               </Button>
-            </CardFooter> */}
+            </CardFooter>
           </Card>
         ))}
       </div>

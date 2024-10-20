@@ -164,3 +164,5 @@ export const ABI = [
   },
 ] as const;
 export const AGGREGATOR = "https://aggregator.walrus-testnet.walrus.space";
+export const SOUL_FAN = "0x5b9E9fEc2833B9C096F7f8c11191759b0ae4850d";
+export const FAN_MEDIA = "0xf5193e6897C49a21a858F59fC7eD1a82c48602A5";
