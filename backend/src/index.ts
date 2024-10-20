@@ -18,7 +18,7 @@ import {
 } from "./handlers.js";
 import { TappdClient } from "@phala/dstack-sdk";
 import { keccak256 } from "viem";
-import { AGGREGATOR } from "./constants.js";
+import { ABI, ADDRESS, AGGREGATOR } from "./constants.js";
 import { exec } from "child_process";
 import util from "util";
 import fs from "fs/promises";
@@ -108,7 +108,7 @@ app.get("/", (_req: Request, res: Response): void => {
 app.post("/create-bot", async (req: Request, res: Response): Promise<void> => {
   try {
     const { prompt, tokenId } = req.body;
-    const blobId = await generateImageHelper(prompt);
+    const blobId = await generateImageHelper({ prompt, isCreation: true });
     console.log("Blob ID:", blobId);
     const privateKey = await getPrivateKey(tokenId);
     const { address } = privateKeyToAccount(privateKey as `0x${string}`);
@@ -132,7 +132,7 @@ app.post("/create-bot", async (req: Request, res: Response): Promise<void> => {
 app.post(
   "/publish-site",
   async (req: Request, res: Response): Promise<void> => {
-    const { blobId, botWallet, tokenId } = req.body;
+    const { blobId, botWallet, tokenId, name } = req.body;
     const execPromise = util.promisify(exec);
 
     const INLINE_SCRIPT = `
@@ -162,7 +162,7 @@ app.post(
   <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Fan Profile</title>
+    <title>${name}</title>
     <style>
       body {
         margin: 0;

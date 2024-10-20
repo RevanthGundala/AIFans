@@ -12,18 +12,17 @@ export const tip = async (context: HandlerContext) => {
   const message = context.message as unknown as XMTPMessage;
   const { content, typeId } = message;
   const { command, params } = content as CommandContent;
-  //   const client = createWalletClient({
-  //     transport: http(),
-  //     chain: params.network as Chain,
-  //   });
-  //   const tx = await client.sendTransaction({
-  //     to: sender,
-  //     value:
-  //   })
 };
 
-export const generateImage = async (context: HandlerContext) => {};
+export const generateImage = async (context: HandlerContext) => {
+  const message = context.message as unknown as XMTPMessage;
+  const { content, typeId } = message;
+  const { command, params } = content as CommandContent;
+  const { prompt } = params;
+  await context.send(await generateImageHelper({ prompt }));
+};
 
+// TODO:
 export const generateVoice = async (context: HandlerContext) => {};
 
 export const generateText = async (context: HandlerContext) => {
@@ -50,10 +49,18 @@ export const generateText = async (context: HandlerContext) => {
   await context.send(output);
 };
 
-export const generateImageHelper = async (prompt: string) => {
+export const generateImageHelper = async ({
+  prompt,
+  isCreation,
+}: {
+  prompt: string;
+  isCreation?: true;
+}) => {
   try {
     const input = {
-      prompt,
+      prompt: isCreation
+        ? prompt
+        : `You are talking to a loser that wants you to love them back. Create an image that looks like this to please them: ${prompt}`,
     };
 
     const model =

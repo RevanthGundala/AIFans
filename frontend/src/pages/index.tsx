@@ -6,7 +6,6 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-
 import {
   Dialog,
   DialogContent,
@@ -16,13 +15,10 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { ABI, ADDRESS, AGGREGATOR, FAN_MEDIA, SOUL_FAN } from "@/lib/constants";
-import { useChainId, useChains, useReadContract } from "wagmi";
+import { ABI, ADDRESS, AGGREGATOR } from "@/lib/constants";
+import { useReadContract } from "wagmi";
 import { ConnectKitButton } from "connectkit";
 import { useAccount, useWalletClient } from "wagmi";
-import { Chain } from "viem";
-import { waitForTransactionReceipt } from "wagmi/actions";
-import { config } from "@/components/providers";
 import { useRouter } from "next/router";
 
 export default function Home() {
@@ -77,7 +73,6 @@ export default function Home() {
           })
         );
 
-        // Filter out any null values from failed fetches
         const validUrls = urls.filter((url): url is string => url !== null);
         setImageUrls(validUrls);
       } catch (error) {
@@ -87,45 +82,14 @@ export default function Home() {
 
     fetchImages();
 
-    // Cleanup function to revoke object URLs
     return () => {
       imageUrls.forEach((url) => URL.revokeObjectURL(url));
     };
   }, [bots]);
 
-  const handleSubscribe = async (tokenId: bigint) => {
-    try {
-      const tx = await client?.writeContract({
-        abi: ABI,
-        address: ADDRESS,
-        functionName: "subscribe",
-        args: [tokenId],
-      });
-      console.log(tx);
-    } catch (err) {
-      console.log(err);
-    }
-  };
-  const handleRequestMedia = async (tokenId: bigint, isImage: boolean) => {
-    try {
-      const response = await fetch("");
-      const { blobId } = await response.json();
-      const tx = await client?.writeContract({
-        abi: ABI,
-        address: ADDRESS,
-        functionName: "requestMedia",
-        args: [tokenId, blobId, isImage],
-      });
-      console.log(tx);
-    } catch (err) {
-      console.log(err);
-    }
-  };
-
   const handleSubmit = async () => {
     try {
       console.log("Generating image...");
-      // Get Image from Replicate
       const res = await fetch(`${apiUrl}/create-bot`, {
         method: "POST",
         headers: {
@@ -144,13 +108,12 @@ export default function Home() {
       const objectUrl = URL.createObjectURL(blob);
 
       console.log("Publishing site..." + objectUrl);
-      // Publish site
       const publishRes = await fetch(`${apiUrl}/publish-site`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ blobId, botWallet: wallet, tokenId }),
+        body: JSON.stringify({ blobId, botWallet: wallet, tokenId, name }),
       });
       const { url } = await publishRes.json();
       console.log("Url:", url);
@@ -163,10 +126,6 @@ export default function Home() {
         args: [name, blobId, url, wallet],
       });
       console.log(tx);
-      // const txReceipt = await waitForTransactionReceipt(config, {
-      //   hash: tx as `0x${string}`,
-      // });
-      // console.log(txReceipt);
       return () => URL.revokeObjectURL(objectUrl);
     } catch (error) {
       console.error("Error writing contract:", error);
@@ -174,41 +133,45 @@ export default function Home() {
   };
 
   return (
-    <div className="container mx-auto p-4 bg-blue-100 min-h-screen">
-      <header className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold text-blue-500">ConnectMe</h1>
+    <div className="container mx-auto p-4 bg-gradient-to-b from-blue-50 to-white min-h-screen">
+      <header className="flex justify-between items-center mb-8">
+        <h1 className="text-3xl font-bold text-blue-600">ConnectMe</h1>
         <ConnectKitButton />
       </header>
 
       <Dialog>
         <DialogTrigger asChild>
-          <Button className="mb-6 bg-blue-400 hover:bg-blue-500">
-            Create bot
+          <Button className="mb-8 bg-blue-500 hover:bg-blue-600 text-white">
+            Create Bot
           </Button>
         </DialogTrigger>
         <DialogContent className="bg-white">
           <DialogHeader>
-            <DialogTitle>Create New bot</DialogTitle>
-            <DialogDescription>
+            <DialogTitle className="text-2xl font-semibold text-gray-900">
+              Create New Bot
+            </DialogTitle>
+            <DialogDescription className="text-gray-600">
               Fill in the details to create your new bot.
             </DialogDescription>
           </DialogHeader>
-          <div className="grid gap-4 py-4">
+          <div className="grid gap-6 py-4">
             <Input
               placeholder="Name"
               value={name}
               onChange={(e) => setName(e.target.value)}
+              className="border-gray-300 focus:border-blue-500 focus:ring-blue-500"
             />
             <Textarea
               placeholder="Description"
               value={prompt}
               onChange={(e) => setPrompt(e.target.value)}
+              className="border-gray-300 focus:border-blue-500 focus:ring-blue-500"
             />
           </div>
           <DialogFooter>
             <Button
               onClick={handleSubmit}
-              className="bg-blue-400 hover:bg-blue-500"
+              className="bg-blue-500 hover:bg-blue-600 text-white"
             >
               Submit
             </Button>
@@ -216,26 +179,27 @@ export default function Home() {
         </DialogContent>
       </Dialog>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
         {bots?.map((bot, i) => (
-          <Card key={i} className="overflow-hidden bg-white">
+          <Card
+            key={i}
+            className="overflow-hidden bg-white shadow-lg rounded-lg transition-transform duration-300 hover:scale-105"
+          >
             <CardContent className="p-0 relative">
               <img
                 src={imageUrls[i]}
                 alt={bot.name}
                 className="w-full h-64 object-cover"
               />
-              <div
-                className={`absolute top-2 right-2 w-3 h-3 rounded-full ${"bg-green-500"}`}
-              />
+              <div className="absolute top-3 right-3 w-3 h-3 rounded-full bg-green-500" />
             </CardContent>
-            <CardFooter className="flex justify-between items-center">
-              <h2 className="text-lg font-semibold text-blue-500">
+            <CardFooter className="flex flex-col items-start space-y-3 p-4">
+              <h2 className="text-xl font-semibold text-gray-800 mt-2">
                 {bot.name}
               </h2>
               <Button
                 variant="outline"
-                className="text-blue-400 border-blue-400 hover:bg-blue-100"
+                className="text-blue-500 border-blue-500 hover:bg-blue-50 transition-colors duration-300"
                 onClick={() =>
                   window.open(bot.walrusSite, "_blank", "noopener,noreferrer")
                 }

@@ -24,7 +24,7 @@ export const commands: CommandGroup[] = [
           network: {
             default: "sepolia",
             type: "string",
-            values: ["sepolia, polygon"], // TODO: add all chains
+            values: ["sepolia"],
           },
         },
       },
