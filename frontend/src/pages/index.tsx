@@ -81,17 +81,24 @@ export default function Home() {
         body: JSON.stringify({ tokenId, prompt }),
       });
       const data = await res.json();
-      const { blobId, wallet } = data;
+      console.log("data received:", data);
+      const { blobId, wallet, rawResponse } = data;
 
-      console.log("Fetching Url...");
-      // Submit tx
-      const response = await fetch(`${AGGREGATOR}/v1/${blobId}`);
-      const blob = await response.blob();
+      const blob = await fetch(`data:image/png;base64,${rawResponse}`).then(
+        (r) => r.blob()
+      );
+      console.log("blob: ", blob);
       const objectUrl = URL.createObjectURL(blob);
 
-      console.log("Publishing site...");
+      console.log("Publishing site..." + objectUrl);
       // Publish site
-      const publishRes = await fetch(`${apiUrl}/publish-site`);
+      const publishRes = await fetch(`${apiUrl}/publish-site`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ blobId }),
+      });
       const { url } = await publishRes.json();
       console.log("Url:", url);
       console.log("Submitting transaction...");

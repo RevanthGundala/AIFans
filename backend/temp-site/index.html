@@ -1,0 +1,95 @@
+
+        <!DOCTYPE html>
+        <html lang="en">
+          <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>Constant Blob Image Viewer</title>
+            <style>
+              body {
+                margin: 0;
+                padding: 0;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                min-height: 100vh;
+                background-color: #f0f0f0;
+                font-family: Arial, sans-serif;
+              }
+              #imageContainer {
+                max-width: 100%;
+                max-height: 100vh;
+                text-align: center;
+              }
+              #loadingMessage, #errorMessage {
+                font-size: 18px;
+                color: #333;
+                margin-bottom: 20px;
+              }
+              #retryButton {
+                padding: 10px 20px;
+                font-size: 16px;
+                background-color: #4CAF50;
+                color: white;
+                border: none;
+                cursor: pointer;
+                display: none;
+              }
+              #retryButton:hover {
+                background-color: #45a049;
+              }
+            </style>
+          </head>
+          <body>
+            <div id="imageContainer">
+              <p id="loadingMessage">Loading image...</p>
+              <p id="errorMessage" style="display:none;"></p>
+              <button id="retryButton">Retry</button>
+            </div>
+            <script>
+              const BLOB_ID = "XK6OjRpG9kyEAa2vXfTnHTwiWhqN0RuZL5UAxEcQ_NU";
+              const AGGREGATOR = "https://aggregator.walrus-testnet.walrus.space";
+  
+              async function fetchAndRenderImage() {
+                const loadingMessage = document.getElementById('loadingMessage');
+                const errorMessage = document.getElementById('errorMessage');
+                const retryButton = document.getElementById('retryButton');
+                const imageContainer = document.getElementById('imageContainer');
+  
+                loadingMessage.style.display = 'block';
+                errorMessage.style.display = 'none';
+                retryButton.style.display = 'none';
+  
+                try {
+                  const response = await fetch(`${AGGREGATOR}/v1/${BLOB_ID}`);
+                  if (!response.ok) {
+                    throw new Error('Failed to fetch image');
+                  }
+                  const blob = await response.blob();
+                  const objectUrl = URL.createObjectURL(blob);
+  
+                  const img = new Image();
+                  img.onload = function() {
+                    loadingMessage.style.display = 'none';
+                    imageContainer.appendChild(img);
+                  };
+                  img.onerror = function() {
+                    throw new Error('Failed to load the image');
+                  };
+                  img.src = objectUrl;
+                  img.style.maxWidth = '100%';
+                  img.style.height = 'auto';
+                } catch (error) {
+                  loadingMessage.style.display = 'none';
+                  errorMessage.textContent = 'Error: ' + error.message;
+                  errorMessage.style.display = 'block';
+                  retryButton.style.display = 'inline-block';
+                }
+              }
+  
+              document.getElementById('retryButton').addEventListener('click', fetchAndRenderImage);
+              fetchAndRenderImage();
+            </script>
+          </body>
+        </html>
+      

@@ -26,7 +26,7 @@ import path from "path";
 import cors from "cors";
 
 const app: Express = express();
-app.options("*", cors()); // Enable pre-flight for all routes
+app.use(cors()); // Enable CORS for all routes
 app.use(express.json());
 const port: number = 3000;
 
@@ -109,13 +109,17 @@ app.post("/create-bot", async (req: Request, res: Response): Promise<void> => {
   try {
     const { prompt, tokenId } = req.body;
     const blobId = await generateImageHelper(prompt);
+    console.log("Blob ID:", blobId);
     const privateKey = await getPrivateKey(tokenId);
     const { address } = privateKeyToAccount(privateKey as `0x${string}`);
-    console.log("Returning...");
+    console.log("Address:", address);
+    const response = await fetch(`${AGGREGATOR}/v1/${blobId}`);
+    const rawResponse = await response.arrayBuffer();
     res.json({
       status: "success",
-      blobId: blobId,
+      blobId,
       wallet: address,
+      rawResponse: Buffer.from(rawResponse).toString("base64"),
     });
   } catch (err) {
     console.log(err);
@@ -136,12 +140,12 @@ app.post(
       set -e
       SITE_CONTENT_PATH=$1
       BLOB_ID=$2
-      cd walrus-sites
+      cd ../walrus-sites
       echo "Current directory: $(pwd)"
       echo "Contents of current directory:"
       ls -la
       echo "Executing site-builder..."
-      OUTPUT=$(./target/release/site-builder --gas-budget 500000000 publish "$SITE_CONTENT_PATH")
+      OUTPUT=$(./target/release/site-builder publish "$SITE_CONTENT_PATH" --epochs 100)
       echo "Raw output from site-builder:"
       echo "$OUTPUT"
       URL=$(echo "$OUTPUT" | grep -o 'https://.*\\.walrus\\.site')

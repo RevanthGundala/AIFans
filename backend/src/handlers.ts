@@ -81,6 +81,7 @@ export const generateImageHelper = async (prompt: string) => {
       }
     );
 
+    console.log("Walrus response: ", walrusResponse);
     const data = await walrusResponse.json();
     if ((data as any).alreadyCertified)
       throw new Error("Image already certified");
