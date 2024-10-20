@@ -24,5 +24,6 @@ COPY . .
 RUN npm run build
 
 EXPOSE 3000
+ENV DSTACK_SIMULATOR_ENDPOINT="http://host.docker.internal:8090"
 
 CMD ["npm", "start"]
