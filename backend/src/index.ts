@@ -157,100 +157,187 @@ app.post(
       console.log("Blob ID:", blobId);
 
       const htmlContent = `
-        <!DOCTYPE html>
-        <html lang="en">
-          <head>
-            <meta charset="UTF-8">
-            <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            <title>Constant Blob Image Viewer</title>
-            <style>
-              body {
-                margin: 0;
-                padding: 0;
-                display: flex;
-                justify-content: center;
-                align-items: center;
-                min-height: 100vh;
-                background-color: #f0f0f0;
-                font-family: Arial, sans-serif;
-              }
-              #imageContainer {
-                max-width: 100%;
-                max-height: 100vh;
-                text-align: center;
-              }
-              #loadingMessage, #errorMessage {
-                font-size: 18px;
-                color: #333;
-                margin-bottom: 20px;
-              }
-              #retryButton {
-                padding: 10px 20px;
-                font-size: 16px;
-                background-color: #4CAF50;
-                color: white;
-                border: none;
-                cursor: pointer;
-                display: none;
-              }
-              #retryButton:hover {
-                background-color: #45a049;
-              }
-            </style>
-          </head>
-          <body>
-            <div id="imageContainer">
-              <p id="loadingMessage">Loading image...</p>
-              <p id="errorMessage" style="display:none;"></p>
-              <button id="retryButton">Retry</button>
-            </div>
-            <script>
-              const BLOB_ID = "${blobId}";
-              const AGGREGATOR = "${AGGREGATOR}";
-  
-              async function fetchAndRenderImage() {
-                const loadingMessage = document.getElementById('loadingMessage');
-                const errorMessage = document.getElementById('errorMessage');
-                const retryButton = document.getElementById('retryButton');
-                const imageContainer = document.getElementById('imageContainer');
-  
-                loadingMessage.style.display = 'block';
-                errorMessage.style.display = 'none';
-                retryButton.style.display = 'none';
-  
-                try {
-                  const response = await fetch(\`\${AGGREGATOR}/v1/\${BLOB_ID}\`);
-                  if (!response.ok) {
-                    throw new Error('Failed to fetch image');
-                  }
-                  const blob = await response.blob();
-                  const objectUrl = URL.createObjectURL(blob);
-  
-                  const img = new Image();
-                  img.onload = function() {
-                    loadingMessage.style.display = 'none';
-                    imageContainer.appendChild(img);
-                  };
-                  img.onerror = function() {
-                    throw new Error('Failed to load the image');
-                  };
-                  img.src = objectUrl;
-                  img.style.maxWidth = '100%';
-                  img.style.height = 'auto';
-                } catch (error) {
-                  loadingMessage.style.display = 'none';
-                  errorMessage.textContent = 'Error: ' + error.message;
-                  errorMessage.style.display = 'block';
-                  retryButton.style.display = 'inline-block';
-                }
-              }
-  
-              document.getElementById('retryButton').addEventListener('click', fetchAndRenderImage);
-              fetchAndRenderImage();
-            </script>
-          </body>
-        </html>
-      `;
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Fan Profile</title>
+    <style>
+      body {
+        margin: 0;
+        padding: 20px;
+        min-height: 100vh;
+        background-color: #f0f0f0;
+        font-family: 'Inter', system-ui, -apple-system, sans-serif;
+      }
+      .container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 20px;
+        display: flex;
+        gap: 40px;
+        align-items: flex-start;
+      }
+      .image-container {
+        flex: 1;
+        background: white;
+        border-radius: 12px;
+        padding: 20px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      }
+      .info-container {
+        flex: 1;
+        background: white;
+        border-radius: 12px;
+        padding: 20px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      }
+      img {
+        max-width: 100%;
+        height: auto;
+        border-radius: 8px;
+      }
+      .button {
+        display: inline-flex;
+        align-items: center;
+        padding: 10px 20px;
+        background-color: white;
+        border: 1px solid #60a5fa;
+        color: #60a5fa;
+        border-radius: 6px;
+        font-size: 16px;
+        cursor: pointer;
+        text-decoration: none;
+        margin-right: 10px;
+        transition: all 0.2s ease;
+      }
+      .button:hover {
+        background-color: #f0f7ff;
+      }
+      .arrow-icon {
+        margin-left: 8px;
+        width: 16px;
+        height: 16px;
+      }
+      #loadingMessage, #errorMessage {
+        font-size: 16px;
+        color: #374151;
+        margin: 20px 0;
+      }
+      #retryButton {
+        padding: 10px 20px;
+        background-color: #60a5fa;
+        color: white;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+        display: none;
+      }
+      .wallet-address {
+        font-family: monospace;
+        background: #f3f4f6;
+        padding: 8px 12px;
+        border-radius: 6px;
+        margin: 10px 0;
+        word-break: break-all;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="image-container">
+        <p id="loadingMessage">Loading image...</p>
+        <p id="errorMessage" style="display:none;"></p>
+        <button id="retryButton">Retry</button>
+      </div>
+      <div class="info-container">
+        <h2>AI Fan Profile</h2>
+        <div class="wallet-address">${botWallet}</div>
+        <div style="margin-top: 20px">
+          <a href="#" onclick="initializeChat()" class="button">
+            Chat
+            <svg class="arrow-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M7 17L17 7M17 7H7M17 7V17"></path>
+            </svg>
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      const BLOB_ID = "${blobId}";
+      const AGGREGATOR = "${AGGREGATOR}";
+      const BOT_WALLET = "${botWallet}";
+      const TOKEN_ID = "${tokenId}";
+
+      async function initializeChat() {
+        try {
+          const response = await fetch('${
+            process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000"
+          }/xmtp/initialize', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              tokenId: TOKEN_ID
+            })
+          });
+
+          const data = await response.json();
+          if (data.status === 'success') {
+            // Open XMTP chat in new tab (replace with your chat URL)
+            window.open(\`https://xmtp.chat/dm/\${BOT_WALLET}\`, '_blank', 'noopener,noreferrer');
+          } else {
+            console.error('Failed to initialize chat:', data.error);
+          }
+        } catch (error) {
+          console.error('Error initializing chat:', error);
+        }
+      }
+
+      async function fetchAndRenderImage() {
+        const loadingMessage = document.getElementById('loadingMessage');
+        const errorMessage = document.getElementById('errorMessage');
+        const retryButton = document.getElementById('retryButton');
+        const imageContainer = document.querySelector('.image-container');
+
+        loadingMessage.style.display = 'block';
+        errorMessage.style.display = 'none';
+        retryButton.style.display = 'none';
+
+        try {
+          const response = await fetch(\`\${AGGREGATOR}/v1/\${BLOB_ID}\`);
+          if (!response.ok) {
+            throw new Error('Failed to fetch image');
+          }
+          const blob = await response.blob();
+          const objectUrl = URL.createObjectURL(blob);
+
+          const img = new Image();
+          img.onload = function() {
+            loadingMessage.style.display = 'none';
+            imageContainer.appendChild(img);
+          };
+          img.onerror = function() {
+            throw new Error('Failed to load the image');
+          };
+          img.src = objectUrl;
+        } catch (error) {
+          loadingMessage.style.display = 'none';
+          errorMessage.textContent = 'Error: ' + error.message;
+          errorMessage.style.display = 'block';
+          retryButton.style.display = 'inline-block';
+        }
+      }
+
+      document.getElementById('retryButton').addEventListener('click', fetchAndRenderImage);
+      fetchAndRenderImage();
+    </script>
+  </body>
+</html>
+`;
 
       const tempDir = path.join(process.cwd(), "temp-site");
       await fs.mkdir(tempDir, { recursive: true });
