@@ -168,5 +168,5 @@ export const ABI = [
 export const PUBLISHER = "https://walrus-testnet-publisher.nodes.guru";
 export const EPOCHS = 10;
 export const AGGREGATOR = "https://walrus-testnet-aggregator.nodes.guru";
-export const SOUL_FAN = "0x5b9E9fEc2833B9C096F7f8c11191759b0ae4850d";
+export const SOUL_FAN = "0x0A5390A39e5De2d89c8a9512B1E98B85A87B509f";
 export const FAN_MEDIA = "0xf5193e6897C49a21a858F59fC7eD1a82c48602A5";

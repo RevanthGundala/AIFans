@@ -8,7 +8,7 @@ export const commands: CommandGroup[] = [
     triggers: ["/tip"],
     commands: [
       {
-        command: "/tip [amount] [token] [network]",
+        command: "/tip [amount] [token]",
         description: "Send a specified amount of a cryptocurrency.",
         handler: tip,
         params: {
@@ -21,11 +21,6 @@ export const commands: CommandGroup[] = [
             type: "string",
             values: ["eth", "usdc"],
           },
-          network: {
-            default: "sepolia",
-            type: "string",
-            values: ["sepolia"],
-          },
         },
       },
     ],
@@ -36,16 +31,12 @@ export const commands: CommandGroup[] = [
     triggers: ["/image"],
     commands: [
       {
-        command: "/image [prompt] [imageDescription]",
+        command: "/image [prompt]",
         description: "Generate an AI image based on the text prompt.",
         handler: generateImage,
         params: {
           prompt: {
             type: "string",
-          },
-          imageDescription: {
-            type: "string",
-            default: "You are a beautiful unicorn.",
           },
         },
       },

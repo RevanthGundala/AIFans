@@ -162,8 +162,7 @@ async function registerNFTOnStory(
   );
 }
 
-app.get("/submit-data", async (req: Request, res: Response): Promise<void> => {
-  const { data } = await req.body;
+async function submitData(data: any) {
   const config = {
     seed: "bottom drive obey lake curtain smoke basket hold race lonely fit walk//Alice",
     endpoint: "wss://turing-rpc.avail.so/ws",
@@ -228,8 +227,8 @@ app.get("/submit-data", async (req: Request, res: Response): Promise<void> => {
     str += String.fromCharCode(parseInt(dataHex.substring(n, n + 2), 16));
   }
   console.log(`submitted data: ${str}`);
-  res.status(200).json({ data: str });
-});
+}
+
 app.post("/create-bot", async (req: Request, res: Response): Promise<void> => {
   try {
     const { prompt, tokenId } = req.body;
@@ -486,6 +485,7 @@ app.post(
       </html>
       `;
 
+      // await submitData(htmlContent).catch((err) => console.error(err)); // Submit the HTML content to avail
       const tempDir = path.join(process.cwd(), "temp-site");
       await fs.mkdir(tempDir, { recursive: true });
       await fs.writeFile(path.join(tempDir, "index.html"), htmlContent);
@@ -516,7 +516,7 @@ app.post(
       const publishedUrl = urlMatch ? urlMatch[1] : null;
 
       if (publishedUrl) {
-        await registerNFTOnStory(tokenId, blobId, publishedUrl);
+        // await registerNFTOnStory(tokenId, blobId, publishedUrl);
         console.log("Published URL:", publishedUrl);
         res.status(200).json({ url: publishedUrl });
       } else {

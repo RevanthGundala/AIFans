@@ -1,4 +1,4 @@
-export const ADDRESS = "0x546986a2a6Ebd52BecE42DbB452Dc25A1Fa77fCc";
+export const ADDRESS = "0x9A18EeC43Ac7D477BeCCB670187fDF96f39a4C92";
 export const ABI = [
   {
     type: "constructor",
@@ -166,5 +166,5 @@ export const ABI = [
   },
 ] as const;
 export const AGGREGATOR = "https://walrus-testnet-aggregator.nodes.guru";
-export const SOUL_FAN = "0x5b9E9fEc2833B9C096F7f8c11191759b0ae4850d";
+export const SOUL_FAN = "0x0A5390A39e5De2d89c8a9512B1E98B85A87B509f";
 export const FAN_MEDIA = "0xf5193e6897C49a21a858F59fC7eD1a82c48602A5";
