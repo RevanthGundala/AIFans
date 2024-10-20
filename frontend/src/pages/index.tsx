@@ -1,7 +1,5 @@
-"use client";
-
 import { useState, useEffect } from "react";
-import { ArrowUpRight } from "lucide-react";
+import { ArrowUpRight, Loader2, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -14,7 +12,9 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
+  DialogClose,
 } from "@/components/ui/dialog";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { ABI, ADDRESS, AGGREGATOR } from "@/lib/constants";
 import { useReadContract } from "wagmi";
 import { ConnectKitButton } from "connectkit";
@@ -46,6 +46,11 @@ export default function Home() {
   const [name, setName] = useState("");
   const [prompt, setPrompt] = useState("");
   const [imageUrls, setImageUrls] = useState<string[]>([]);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submissionStatus, setSubmissionStatus] = useState("");
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [newBotUrl, setNewBotUrl] = useState("");
+  const [showAlert, setShowAlert] = useState(false);
   const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
 
   useEffect(() => {
@@ -88,7 +93,9 @@ export default function Home() {
   }, [bots]);
 
   const handleSubmit = async () => {
+    setIsSubmitting(true);
     try {
+      setSubmissionStatus("Generating image...");
       console.log("Generating image...");
       const res = await fetch(`${apiUrl}/create-bot`, {
         method: "POST",
@@ -101,12 +108,14 @@ export default function Home() {
       console.log("data received:", data);
       const { blobId, wallet, rawResponse } = data;
 
+      setSubmissionStatus("Processing image data...");
       const blob = await fetch(`data:image/png;base64,${rawResponse}`).then(
         (r) => r.blob()
       );
       console.log("blob: ", blob);
       const objectUrl = URL.createObjectURL(blob);
 
+      setSubmissionStatus("Publishing site...");
       console.log("Publishing site..." + objectUrl);
       const publishRes = await fetch(`${apiUrl}/publish-site`, {
         method: "POST",
@@ -118,6 +127,8 @@ export default function Home() {
       const { url } = await publishRes.json();
       console.log("Url:", url);
       if (!url) throw new Error("Failed to publish");
+
+      setSubmissionStatus("Submitting transaction...");
       console.log("Submitting transaction...");
       const tx = await client?.writeContract({
         abi: ABI,
@@ -126,9 +137,23 @@ export default function Home() {
         args: [name, blobId, url, wallet],
       });
       console.log(tx);
+
+      setSubmissionStatus("Bot created successfully!");
+      setNewBotUrl(url);
+      setTimeout(() => {
+        setIsSubmitting(false);
+        setSubmissionStatus("");
+        setIsDialogOpen(false);
+        setShowAlert(true);
+      }, 2000);
       return () => URL.revokeObjectURL(objectUrl);
     } catch (error) {
       console.error("Error writing contract:", error);
+      setSubmissionStatus("Error creating bot. Please try again.");
+      setTimeout(() => {
+        setIsSubmitting(false);
+        setSubmissionStatus("");
+      }, 2000);
     }
   };
 
@@ -139,9 +164,30 @@ export default function Home() {
         <ConnectKitButton />
       </header>
 
-      <Dialog>
+      {showAlert && (
+        <Alert className="mb-4">
+          <AlertTitle>New bot is ready!</AlertTitle>
+          <AlertDescription className="flex items-center">
+            Your new bot has been created successfully.
+            <Button
+              variant="link"
+              className="ml-2 text-blue-500"
+              onClick={() =>
+                window.open(newBotUrl, "_blank", "noopener,noreferrer")
+              }
+            >
+              View <ArrowUpRight className="ml-1 h-4 w-4" />
+            </Button>
+          </AlertDescription>
+        </Alert>
+      )}
+
+      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <DialogTrigger asChild>
-          <Button className="mb-8 bg-blue-500 hover:bg-blue-600 text-white">
+          <Button
+            className="mb-8 bg-blue-500 hover:bg-blue-600 text-white"
+            onClick={() => setIsDialogOpen(true)}
+          >
             Create Bot
           </Button>
         </DialogTrigger>
@@ -154,26 +200,38 @@ export default function Home() {
               Fill in the details to create your new bot.
             </DialogDescription>
           </DialogHeader>
+          <DialogClose className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-muted-foreground">
+            <X className="h-4 w-4 text-black" />
+            <span className="sr-only">Close</span>
+          </DialogClose>
           <div className="grid gap-6 py-4">
             <Input
               placeholder="Name"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              className="border-gray-300 focus:border-blue-500 focus:ring-blue-500"
+              className="border-gray-300 focus:border-blue-500 focus:ring-blue-500 text-gray-900"
             />
             <Textarea
               placeholder="Description"
               value={prompt}
               onChange={(e) => setPrompt(e.target.value)}
-              className="border-gray-300 focus:border-blue-500 focus:ring-blue-500"
+              className="border-gray-300 focus:border-blue-500 focus:ring-blue-500 text-gray-900"
             />
           </div>
-          <DialogFooter>
+          <DialogFooter className="flex flex-col items-center">
             <Button
               onClick={handleSubmit}
-              className="bg-blue-500 hover:bg-blue-600 text-white"
+              className="bg-blue-500 hover:bg-blue-600 text-white w-full"
+              disabled={isSubmitting}
             >
-              Submit
+              {isSubmitting ? (
+                <div className="flex items-center justify-center">
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  {submissionStatus}
+                </div>
+              ) : (
+                "Submit"
+              )}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -189,7 +247,7 @@ export default function Home() {
               <img
                 src={imageUrls[i]}
                 alt={bot.name}
-                className="w-full h-64 object-cover"
+                className="w-full h-80 object-cover"
               />
               <div className="absolute top-3 right-3 w-3 h-3 rounded-full bg-green-500" />
             </CardContent>

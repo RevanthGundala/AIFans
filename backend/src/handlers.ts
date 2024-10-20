@@ -1,4 +1,4 @@
-import { HandlerContext } from "@xmtp/message-kit";
+import { HandlerContext, MessageAbstracted } from "@xmtp/message-kit";
 import { XMTPMessage, Content, CommandContent } from "./types";
 import Replicate from "replicate";
 import { Chain, createPublicClient, createWalletClient, http } from "viem";
@@ -9,14 +9,18 @@ const replicate = new Replicate({
 });
 
 export const tip = async (context: HandlerContext) => {
-  const message = context.message as unknown as XMTPMessage;
-  const { content, typeId } = message;
+  const message = context.message as unknown as MessageAbstracted;
+  const { content, typeId, sender } = message;
   const { command, params } = content as CommandContent;
+  const { amount, token, network } = params;
+  await context.send(
+    `${amount} ${token} sent on ${network} to ${sender.address}`
+  );
 };
 
 export const generateImage = async (context: HandlerContext) => {
-  const message = context.message as unknown as XMTPMessage;
-  const { content, typeId } = message;
+  const message = context.message as unknown as MessageAbstracted;
+  const { content, sender } = message;
   const { command, params } = content as CommandContent;
   const { prompt } = params;
   await context.send(await generateImageHelper({ prompt }));
@@ -60,7 +64,8 @@ export const generateImageHelper = async ({
     const input = {
       prompt: isCreation
         ? prompt
-        : `You are talking to a loser that wants you to love them back. Create an image that looks like this to please them: ${prompt}`,
+        : `You are talking to a loser that wants you to love them back. Create an image that looks like this to please them: ${prompt}.`,
+      output_format: "png",
     };
 
     const model =
@@ -77,23 +82,7 @@ export const generateImageHelper = async ({
     console.log("output: ", output);
     // replicate url
     const replicateUrl = Array.isArray(output) ? output[0] : output;
-    const blob = await fetch(replicateUrl).then((res) => res.blob());
-
-    // Send the blob to Walrus using a PUT request
-    const walrusResponse = await fetch(
-      `${PUBLISHER}/v1/store?epochs=${EPOCHS}`,
-      {
-        method: "PUT",
-        body: blob, // Directly send the blob as the request body
-      }
-    );
-
-    console.log("Walrus response: ", walrusResponse);
-    const data = await walrusResponse.json();
-    if ((data as any).alreadyCertified)
-      throw new Error("Image already certified");
-    console.log("Data: ", data);
-    return (data as any).newlyCreated.blobObject.blobId;
+    return replicateUrl;
   } catch (err) {
     console.log(err);
     return null;

@@ -36,12 +36,16 @@ export const commands: CommandGroup[] = [
     triggers: ["/image"],
     commands: [
       {
-        command: "/image [prompt]",
+        command: "/image [prompt] [imageDescription]",
         description: "Generate an AI image based on the text prompt.",
         handler: generateImage,
         params: {
           prompt: {
             type: "string",
+          },
+          imageDescription: {
+            type: "string",
+            default: "You are a beautiful unicorn.",
           },
         },
       },

@@ -14,11 +14,12 @@ import {
   generateImage,
   generateImageHelper,
   generateText,
+  generateVoice,
   tip,
 } from "./handlers.js";
 import { TappdClient } from "@phala/dstack-sdk";
 import { keccak256 } from "viem";
-import { ABI, ADDRESS, AGGREGATOR } from "./constants.js";
+import { ABI, ADDRESS, AGGREGATOR, EPOCHS, PUBLISHER } from "./constants.js";
 import { exec } from "child_process";
 import util from "util";
 import fs from "fs/promises";
@@ -77,6 +78,7 @@ async function initializeXMTPClient(privateKey: string): Promise<ClientInfo> {
           if (command === "image") {
             await generateImage(context);
           } else if (command === "voice") {
+            await generateVoice(context);
           } else if (command === "tip") {
             await tip(context);
           }
@@ -108,7 +110,28 @@ app.get("/", (_req: Request, res: Response): void => {
 app.post("/create-bot", async (req: Request, res: Response): Promise<void> => {
   try {
     const { prompt, tokenId } = req.body;
-    const blobId = await generateImageHelper({ prompt, isCreation: true });
+    const replicateUrl = await generateImageHelper({
+      prompt,
+      isCreation: true,
+    });
+    const blob = await fetch(replicateUrl).then((res) => res.blob());
+
+    // Send the blob to Walrus using a PUT request
+    const walrusResponse = await fetch(
+      `${PUBLISHER}/v1/store?epochs=${EPOCHS}`,
+      {
+        method: "PUT",
+        body: blob, // Directly send the blob as the request body
+      }
+    );
+
+    console.log("Walrus response: ", walrusResponse);
+    const data = await walrusResponse.json();
+    if ((data as any).alreadyCertified)
+      throw new Error("Image already certified");
+    console.log("Data: ", data);
+    const blobId = (data as any).newlyCreated.blobObject.blobId;
+
     console.log("Blob ID:", blobId);
     const privateKey = await getPrivateKey(tokenId);
     const { address } = privateKeyToAccount(privateKey as `0x${string}`);
@@ -157,187 +180,187 @@ app.post(
       console.log("Blob ID:", blobId);
 
       const htmlContent = `
-<!DOCTYPE html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>${name}</title>
-    <style>
-      body {
-        margin: 0;
-        padding: 20px;
-        min-height: 100vh;
-        background-color: #f0f0f0;
-        font-family: 'Inter', system-ui, -apple-system, sans-serif;
-      }
-      .container {
-        max-width: 1200px;
-        margin: 0 auto;
-        padding: 20px;
-        display: flex;
-        gap: 40px;
-        align-items: flex-start;
-      }
-      .image-container {
-        flex: 1;
-        background: white;
-        border-radius: 12px;
-        padding: 20px;
-        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-      }
-      .info-container {
-        flex: 1;
-        background: white;
-        border-radius: 12px;
-        padding: 20px;
-        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-      }
-      img {
-        max-width: 100%;
-        height: auto;
-        border-radius: 8px;
-      }
-      .button {
-        display: inline-flex;
-        align-items: center;
-        padding: 10px 20px;
-        background-color: white;
-        border: 1px solid #60a5fa;
-        color: #60a5fa;
-        border-radius: 6px;
-        font-size: 16px;
-        cursor: pointer;
-        text-decoration: none;
-        margin-right: 10px;
-        transition: all 0.2s ease;
-      }
-      .button:hover {
-        background-color: #f0f7ff;
-      }
-      .arrow-icon {
-        margin-left: 8px;
-        width: 16px;
-        height: 16px;
-      }
-      #loadingMessage, #errorMessage {
-        font-size: 16px;
-        color: #374151;
-        margin: 20px 0;
-      }
-      #retryButton {
-        padding: 10px 20px;
-        background-color: #60a5fa;
-        color: white;
-        border: none;
-        border-radius: 6px;
-        cursor: pointer;
-        display: none;
-      }
-      .wallet-address {
-        font-family: monospace;
-        background: #f3f4f6;
-        padding: 8px 12px;
-        border-radius: 6px;
-        margin: 10px 0;
-        word-break: break-all;
-      }
-    </style>
-  </head>
-  <body>
-    <div class="container">
-      <div class="image-container">
-        <p id="loadingMessage">Loading image...</p>
-        <p id="errorMessage" style="display:none;"></p>
-        <button id="retryButton">Retry</button>
-      </div>
-      <div class="info-container">
-        <h2>AI Fan Profile</h2>
-        <div class="wallet-address">${botWallet}</div>
-        <div style="margin-top: 20px">
-          <a href="#" onclick="initializeChat()" class="button">
-            Chat
-            <svg class="arrow-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M7 17L17 7M17 7H7M17 7V17"></path>
-            </svg>
-          </a>
-        </div>
-      </div>
-    </div>
-
-    <script>
-      const BLOB_ID = "${blobId}";
-      const AGGREGATOR = "${AGGREGATOR}";
-      const BOT_WALLET = "${botWallet}";
-      const TOKEN_ID = "${tokenId}";
-
-      async function initializeChat() {
-        try {
-          const response = await fetch('${
-            process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000"
-          }/xmtp/initialize', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              tokenId: TOKEN_ID
-            })
-          });
-
-          const data = await response.json();
-          if (data.status === 'success') {
-            // Open XMTP chat in new tab (replace with your chat URL)
-            window.open(\`https://xmtp.chat/dm/\${BOT_WALLET}\`, '_blank', 'noopener,noreferrer');
-          } else {
-            console.error('Failed to initialize chat:', data.error);
-          }
-        } catch (error) {
-          console.error('Error initializing chat:', error);
-        }
-      }
-
-      async function fetchAndRenderImage() {
-        const loadingMessage = document.getElementById('loadingMessage');
-        const errorMessage = document.getElementById('errorMessage');
-        const retryButton = document.getElementById('retryButton');
-        const imageContainer = document.querySelector('.image-container');
-
-        loadingMessage.style.display = 'block';
-        errorMessage.style.display = 'none';
-        retryButton.style.display = 'none';
-
-        try {
-          const response = await fetch(\`\${AGGREGATOR}/v1/\${BLOB_ID}\`);
-          if (!response.ok) {
-            throw new Error('Failed to fetch image');
-          }
-          const blob = await response.blob();
-          const objectUrl = URL.createObjectURL(blob);
-
-          const img = new Image();
-          img.onload = function() {
-            loadingMessage.style.display = 'none';
-            imageContainer.appendChild(img);
-          };
-          img.onerror = function() {
-            throw new Error('Failed to load the image');
-          };
-          img.src = objectUrl;
-        } catch (error) {
-          loadingMessage.style.display = 'none';
-          errorMessage.textContent = 'Error: ' + error.message;
-          errorMessage.style.display = 'block';
-          retryButton.style.display = 'inline-block';
-        }
-      }
-
-      document.getElementById('retryButton').addEventListener('click', fetchAndRenderImage);
-      fetchAndRenderImage();
-    </script>
-  </body>
-</html>
-`;
+      <!DOCTYPE html>
+      <html lang="en">
+        <head>
+          <meta charset="UTF-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <title>${name}</title>
+          <style>
+            body {
+              margin: 0;
+              padding: 20px;
+              min-height: 100vh;
+              background-color: #f0f0f0;
+              font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            }
+            .container {
+              max-width: 1200px;
+              margin: 0 auto;
+              padding: 20px;
+              display: flex;
+              gap: 40px;
+              align-items: flex-start;
+            }
+            .image-container {
+              flex: 1;
+              background: white;
+              border-radius: 12px;
+              padding: 20px;
+              box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            }
+            .info-container {
+              flex: 1;
+              background: white;
+              border-radius: 12px;
+              padding: 20px;
+              box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            }
+            img {
+              max-width: 100%;
+              height: auto;
+              border-radius: 8px;
+            }
+            .button {
+              display: inline-flex;
+              align-items: center;
+              padding: 10px 20px;
+              background-color: white;
+              border: 1px solid #60a5fa;
+              color: #60a5fa;
+              border-radius: 6px;
+              font-size: 16px;
+              cursor: pointer;
+              text-decoration: none;
+              margin-right: 10px;
+              transition: all 0.2s ease;
+            }
+            .button:hover {
+              background-color: #f0f7ff;
+            }
+            .arrow-icon {
+              margin-left: 8px;
+              width: 16px;
+              height: 16px;
+            }
+            #loadingMessage, #errorMessage {
+              font-size: 16px;
+              color: #374151;
+              margin: 20px 0;
+            }
+            #retryButton {
+              padding: 10px 20px;
+              background-color: #60a5fa;
+              color: white;
+              border: none;
+              border-radius: 6px;
+              cursor: pointer;
+              display: none;
+            }
+            .wallet-address {
+              font-family: monospace;
+              background: #f3f4f6;
+              padding: 8px 12px;
+              border-radius: 6px;
+              margin: 10px 0;
+              word-break: break-all;
+            }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <div class="image-container">
+              <p id="loadingMessage">Loading image...</p>
+              <p id="errorMessage" style="display:none;"></p>
+              <button id="retryButton">Retry</button>
+            </div>
+            <div class="info-container">
+              <h2>AI Fan Profile</h2>
+              <div class="wallet-address">${botWallet}</div>
+              <div style="margin-top: 20px">
+                <a href="#" onclick="initializeChat()" class="button">
+                  Chat
+                  <svg class="arrow-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M7 17L17 7M17 7H7M17 7V17"></path>
+                  </svg>
+                </a>
+              </div>
+            </div>
+          </div>
+      
+          <script>
+            const BLOB_ID = "${blobId}";
+            const AGGREGATOR = "${AGGREGATOR}";
+            const BOT_WALLET = "${botWallet}";
+            const TOKEN_ID = "${tokenId}";
+      
+            async function initializeChat() {
+              try {
+                const response = await fetch('${
+                  process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000"
+                }/xmtp/initialize', {
+                  method: 'POST',
+                  headers: {
+                    'Content-Type': 'application/json',
+                  },
+                  body: JSON.stringify({
+                    tokenId: TOKEN_ID
+                  })
+                });
+      
+                const data = await response.json();
+                if (data.status === 'success') {
+                  // Open XMTP chat in new tab (replace with your chat URL)
+                  window.open(\`https://app.converse.xyz/conversation\`, '_blank', 'noopener,noreferrer');
+                } else {
+                  console.error('Failed to initialize chat:', data.error);
+                }
+              } catch (error) {
+                console.error('Error initializing chat:', error);
+              }
+            }
+      
+            async function fetchAndRenderImage() {
+              const loadingMessage = document.getElementById('loadingMessage');
+              const errorMessage = document.getElementById('errorMessage');
+              const retryButton = document.getElementById('retryButton');
+              const imageContainer = document.querySelector('.image-container');
+      
+              loadingMessage.style.display = 'block';
+              errorMessage.style.display = 'none';
+              retryButton.style.display = 'none';
+      
+              try {
+                const response = await fetch(\`\${AGGREGATOR}/v1/\${BLOB_ID}\`);
+                if (!response.ok) {
+                  throw new Error('Failed to fetch image');
+                }
+                const blob = await response.blob();
+                const objectUrl = URL.createObjectURL(blob);
+      
+                const img = new Image();
+                img.onload = function() {
+                  loadingMessage.style.display = 'none';
+                  imageContainer.appendChild(img);
+                };
+                img.onerror = function() {
+                  throw new Error('Failed to load the image');
+                };
+                img.src = objectUrl;
+              } catch (error) {
+                loadingMessage.style.display = 'none';
+                errorMessage.textContent = 'Error: ' + error.message;
+                errorMessage.style.display = 'block';
+                retryButton.style.display = 'inline-block';
+              }
+            }
+      
+            document.getElementById('retryButton').addEventListener('click', fetchAndRenderImage);
+            fetchAndRenderImage();
+          </script>
+        </body>
+      </html>
+      `;
 
       const tempDir = path.join(process.cwd(), "temp-site");
       await fs.mkdir(tempDir, { recursive: true });
