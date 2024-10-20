@@ -52,7 +52,6 @@ const port: number = 3000;
 
 const endpoint =
   process.env.DSTACK_SIMULATOR_ENDPOINT || "http://localhost:8090";
-
 const client = new TappdClient(endpoint);
 
 // Store active XMTP clients
@@ -132,34 +131,38 @@ async function registerNFTOnStory(
   blobId: string,
   walrusSite: string
 ): Promise<void> {
-  const privateKey = await getPrivateKey(tokenId!);
-  const config: StoryConfig = {
-    account: privateKeyToAccount(privateKey as `0x${string}`) as any,
-    transport: http("https://testnet.storyrpc.io") as any,
-    chainId: "iliad",
-  };
-  const client = StoryClient.newClient(config);
-  const response: RegisterIpAndAttachPilTermsResponse =
-    await client.ipAsset.registerIpAndAttachPilTerms({
-      nftContract: SOUL_FAN,
-      tokenId: tokenId!,
-      pilType: PIL_TYPE.NON_COMMERCIAL_REMIX,
-      mintingFee: 0, // empty - doesn't apply
-      currency: AddressZero, // empty - doesn't apply
-      ipMetadata: {
-        ipMetadataURI: blobId,
-        ipMetadataHash: keccak256(`0x${blobId}`),
-        nftMetadataURI: walrusSite,
-        nftMetadataHash: keccak256(`0x${walrusSite}`),
-      },
-      txOptions: { waitForTransaction: false },
-    });
-  console.log(
-    `Root IPA created at transaction hash ${response.txHash}, IPA ID: ${response.ipId}`
-  );
-  console.log(
-    `View on the explorer: https://explorer.story.foundation/ipa/${response.ipId}`
-  );
+  try {
+    const privateKey = await getPrivateKey(tokenId!);
+    const config: StoryConfig = {
+      account: privateKeyToAccount(privateKey as `0x${string}`) as any,
+      transport: http("https://testnet.storyrpc.io") as any,
+      chainId: "iliad",
+    };
+    const client = StoryClient.newClient(config);
+    const response: RegisterIpAndAttachPilTermsResponse =
+      await client.ipAsset.registerIpAndAttachPilTerms({
+        nftContract: SOUL_FAN,
+        tokenId: tokenId!,
+        pilType: PIL_TYPE.NON_COMMERCIAL_REMIX,
+        mintingFee: 0,
+        currency: AddressZero,
+        ipMetadata: {
+          ipMetadataURI: blobId,
+          ipMetadataHash: keccak256(`0x${blobId}`),
+          nftMetadataURI: walrusSite,
+          nftMetadataHash: keccak256(`0x${walrusSite}`),
+        },
+        txOptions: { waitForTransaction: false },
+      });
+    console.log(
+      `Root IPA created at transaction hash ${response.txHash}, IPA ID: ${response.ipId}`
+    );
+    console.log(
+      `View on the explorer: https://explorer.story.foundation/ipa/${response.ipId}`
+    );
+  } catch (error) {
+    console.error("Error registering NFT on Story:", error);
+  }
 }
 
 async function submitData(data: any) {
@@ -187,7 +190,7 @@ async function submitData(data: any) {
   // Rejected Transaction handling
   if (txResult.isError) {
     console.log(`Transaction was not executed`);
-    process.exit(1);
+    return;
   }
 
   const [txHash, blockHash] = [
@@ -516,7 +519,9 @@ app.post(
       const publishedUrl = urlMatch ? urlMatch[1] : null;
 
       if (publishedUrl) {
-        // await registerNFTOnStory(tokenId, blobId, publishedUrl);
+        // await registerNFTOnStory(tokenId, blobId, publishedUrl).catch((err) =>
+        //   console.error(err)
+        // );
         console.log("Published URL:", publishedUrl);
         res.status(200).json({ url: publishedUrl });
       } else {

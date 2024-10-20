@@ -193,9 +193,9 @@ export default function Home() {
   };
 
   return (
-    <div className="container mx-auto p-4 bg-gradient-to-br from-purple-400 via-pink-500 to-red-500 min-h-screen">
+    <div className="mx-auto p-4 bg-gradient-to-br from-purple-400 via-pink-500 to-red-500 min-h-screen">
       <header className="flex justify-between items-center mb-8">
-        <h1 className="text-3xl font-bold text-white">AI Fans</h1>
+        <img src={"/favicon.ico"} alt="logo" className="h-16 w-16" />
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>
             <Button
