@@ -8,6 +8,7 @@ import {FanMedia} from "./FanMedia.sol";
 contract AIFansFactory is ReentrancyGuard {
     struct Bot {
         string name;
+        string blob;
         address wallet;
         string walrusSite;
         uint256 subscriptionPrice;
@@ -46,6 +47,7 @@ contract AIFansFactory is ReentrancyGuard {
         bots[tokenId] = Bot({
             name: name,
             wallet: botWallet,
+            blob: blob,
             walrusSite: walrusSite,
             subscriptionPrice: 0,
             imagePrice: 0,
@@ -88,7 +90,7 @@ contract AIFansFactory is ReentrancyGuard {
     }
 
     function getBots() external view returns (Bot[] memory) {
-        uint256 numBots = FanMedia(fanMediaAddress).tokenId();
+        uint256 numBots = SoulFan(soulFanAddress).tokenId();
         Bot[] memory allBots = new Bot[](numBots);
         for (uint256 i = 0; i < numBots; i++) {
             allBots[i] = bots[i];

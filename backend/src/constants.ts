@@ -160,6 +160,6 @@ export const ABI = [
     anonymous: false,
   },
 ] as const;
-export const PUBLISHER = "https://publisher.walrus-testnet.walrus.space";
+export const PUBLISHER = "https://walrus-testnet-publisher.nodes.guru";
 export const EPOCHS = 10;
-export const AGGREGATOR = "https://aggregator.walrus-testnet.walrus.space";
+export const AGGREGATOR = "https://walrus-testnet-aggregator.nodes.guru";

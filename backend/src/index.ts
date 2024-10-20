@@ -132,7 +132,7 @@ app.post("/create-bot", async (req: Request, res: Response): Promise<void> => {
 app.post(
   "/publish-site",
   async (req: Request, res: Response): Promise<void> => {
-    const { blobId } = req.body;
+    const { blobId, botWallet, tokenId } = req.body;
     const execPromise = util.promisify(exec);
 
     const INLINE_SCRIPT = `

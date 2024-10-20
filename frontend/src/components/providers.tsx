@@ -15,7 +15,7 @@ import { defineChain } from "viem/utils";
 import { ConnectKitProvider, getDefaultConfig } from "connectkit";
 
 const airDAOTestnet = defineChain({
-  id: 22040, // Your custom chain ID
+  id: 22040,
   name: "AirDAO",
   network: "airdao",
   nativeCurrency: {
@@ -43,19 +43,17 @@ const chains: readonly [Chain, ...Chain[]] = [
   sepolia,
 ];
 
-const config = createConfig(
+export const config = createConfig(
   getDefaultConfig({
-    // Your dApps chains
-    chains: chains,
-    transports: chains.map((chain) => http(chain.rpcUrls.default.http[0])),
-    // Required API Keys
-    walletConnectProjectId: process.env.NEXT_PUBLIC_WALLETCONNECT_ID!,
-    // Required App Info
-    appName: "Your App Name",
-    // Optional App Info
-    appDescription: "Your App Description",
-    appUrl: "https://family.co", // your app's url
-    appIcon: "https://family.co/logo.png", // your app's icon, no bigger than 1024x1024px (max. 1MB)
+    chains,
+    transports: Object.fromEntries(
+      chains.map((chain) => [chain.id, http(chain.rpcUrls.default.http[0])])
+    ),
+    walletConnectProjectId: process.env.NEXT_PUBLIC_WALLETCONNECT_ID!, // You still need this for WalletConnect
+    appName: "AI Fans",
+    appDescription: "AI Only Fans Platform",
+    appUrl: "https://aifans.xyz",
+    appIcon: "https://aifans.xyz/logo.png",
   })
 );
 

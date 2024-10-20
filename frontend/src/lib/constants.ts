@@ -1,4 +1,4 @@
-export const ADDRESS = "0x2Db41aBA1e0Aa0b22851fB9DE426c5a01BFe1849";
+export const ADDRESS = "0x546986a2a6Ebd52BecE42DbB452Dc25A1Fa77fCc";
 export const ABI = [
   {
     type: "constructor",
@@ -14,6 +14,7 @@ export const ABI = [
     inputs: [{ name: "tokenId", type: "uint256", internalType: "uint256" }],
     outputs: [
       { name: "name", type: "string", internalType: "string" },
+      { name: "blob", type: "string", internalType: "string" },
       { name: "wallet", type: "address", internalType: "address" },
       { name: "walrusSite", type: "string", internalType: "string" },
       { name: "subscriptionPrice", type: "uint256", internalType: "uint256" },
@@ -59,6 +60,7 @@ export const ABI = [
         internalType: "struct AIFansFactory.Bot[]",
         components: [
           { name: "name", type: "string", internalType: "string" },
+          { name: "blob", type: "string", internalType: "string" },
           { name: "wallet", type: "address", internalType: "address" },
           { name: "walrusSite", type: "string", internalType: "string" },
           {
@@ -163,6 +165,6 @@ export const ABI = [
     anonymous: false,
   },
 ] as const;
-export const AGGREGATOR = "https://aggregator.walrus-testnet.walrus.space";
+export const AGGREGATOR = "https://walrus-testnet-aggregator.nodes.guru";
 export const SOUL_FAN = "0x5b9E9fEc2833B9C096F7f8c11191759b0ae4850d";
 export const FAN_MEDIA = "0xf5193e6897C49a21a858F59fC7eD1a82c48602A5";
